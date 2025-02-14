@@ -12,8 +12,7 @@ The reason behind this project was to free Space on my Desktop while still havin
 
 The recommended use of the batch file is to, create a link to it (right click → create link) and then change the properties of the link, to start (run) minimized (right click → properties →  run). That way, only the python program opens, and the cmd window, which opens as well won't show up, because it is minimized and therefore only appears in the Task Bar.
 
-## Customizing
-- To Configure anything you need to go to the user_config.py file
+To Configure anything you need to go to the user_config.py file
 - The std means standard and is there to reset to default values if wanted
 - If you change the font size to be bigger, it might happen, that you need to increase the img_size as well
 - You can use hex values for the colors.
