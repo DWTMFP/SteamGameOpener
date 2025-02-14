@@ -3,7 +3,7 @@ Creates a tkinter window, in which you choose the game you want to play and then
 
 The reason behind this project was to free Space on my Desktop while still having the img_icons next to  the game name.
 
-1. Download all python files and the batch file
+1. Download the files in the code folder
 2. Specify the Variables in user_data.py
 3. run open_application.bat
 
