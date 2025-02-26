@@ -1,7 +1,7 @@
 import tkinter as tk
 import os
 import webbrowser
-import helper
+from helper import Helper
 from PIL import ImageTk, Image
 from copy import deepcopy
 
@@ -18,7 +18,7 @@ class window():
     
     def __init__(self, master:tk.Tk, user_config):
         self.user_config = user_config
-        self.helper = helper.Helper(user_config.HIDE_STEAMWORKS_COMMON_REDISTRIBUTABLES)
+        self.helper = Helper()
         
         #create games.txt, for custom sorting
         if not os.listdir(self.helper.CURRENT_DIRECTORY).__contains__("games.txt"):
@@ -107,7 +107,11 @@ class window():
             self.games_appids.pop(game)
             self.appids_games.pop(appid)
             self.appids.remove(appid)
-    
+        if os.listdir(user_data.PATH_TO_STEAM.removesuffix("\\")+r"\steamapps").__contains__("appmanifest_228980.acf") and self.user_config.HIDE_STEAMWORKS_COMMON_REDISTRIBUTABLES:
+            self.games_appids.pop("Steamworks Common Redistributables")
+            self.appids_games.pop("228980")
+            self.appids.remove("228980")
+            
     
     def create_new_dicts(self):
         #get name of all games, in the file
