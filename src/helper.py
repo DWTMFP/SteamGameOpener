@@ -3,11 +3,12 @@ import requests
 
 
 import user_data
-import user_config
 
 
 
 class Helper():
+    def __init__(self, hide_weird_app):
+        self.hide_weird_app = hide_weird_app #weird app = STEAM_COMMON_REDISTRIBUTABLE
     CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
     
     
@@ -25,7 +26,7 @@ class Helper():
         for appid in appids_not_usable:
             appids.append(appid.removeprefix("appmanifest_").removesuffix(".acf"))
 
-        if os.listdir().__contains__("appmanifest_228980.acf") and user_config.HIDE_STEAMWORKS_COMMON_REDISTRIBUTABLES:
+        if os.listdir().__contains__("appmanifest_228980.acf") and self.hide_weird_app:
             appids.remove("228980")
 
 

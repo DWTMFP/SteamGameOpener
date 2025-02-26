@@ -1,7 +1,7 @@
 import tkinter as tk
 import os
 import webbrowser
-from helper import Helper
+import helper
 from PIL import ImageTk, Image
 from copy import deepcopy
 
@@ -18,7 +18,7 @@ class window():
     
     def __init__(self, master:tk.Tk, user_config):
         self.user_config = user_config
-        self.helper = Helper()
+        self.helper = helper.Helper(user_config.HIDE_STEAMWORKS_COMMON_REDISTRIBUTABLES)
         
         #create games.txt, for custom sorting
         if not os.listdir(self.helper.CURRENT_DIRECTORY).__contains__("games.txt"):
