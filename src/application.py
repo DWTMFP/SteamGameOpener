@@ -1,5 +1,6 @@
 import tkinter as tk
 import os
+import sys
 import webbrowser
 from helper import Helper
 from PIL import ImageTk, Image
@@ -61,7 +62,7 @@ class window():
         self.add_games()
         
         #autoselect the first game
-        self.last_pressed_label = self.img_labels_dict[self.appids[0]]
+        self.last_pressed_label = self.labels_dict[self.appids[0]]
         self.last_pressed_label.config(font = self.std_font_underline)
     
     
@@ -162,38 +163,57 @@ class window():
         
         
     def add_games(self):
-        self.img_labels_dict = {}
-            
-        for i in range(len(self.appids)):
-            img_i_used = False
-            try: #try to add imgs
-                img = Image.open(os.path.join(self.helper.CURRENT_DIRECTORY, rf'.\images\{self.appids[i]}.jpg'))
-                img.resize([self.user_config.SIZE_OF_IMAGES, self.user_config.SIZE_OF_IMAGES])
-                img = ImageTk.PhotoImage(img)
-                self.img_labels_dict[self.appids[i]] = tk.Label(self.choose_game_frame, text = " " + self.appids_games[self.appids[i]],
-                                                            image = img, font = self.std_font, compound = "left") #compund means the img is left of the text
-                self.img_labels_dict[self.appids[i]].image = img
+        self.labels_dict = {}
+        CURRENT_DIRECTORY = self.helper.CURRENT_DIRECTORY
+        img_dir_empty = True
+        if os.listdir(CURRENT_DIRECTORY).__contains__("images"):
+            img_dir = CURRENT_DIRECTORY + "\\images"
+            if os.listdir(img_dir) != []:
+                img_dir_empty = False
+                imgs = os.listdir(img_dir)
+        
+        #make class vars to local vars (I hope this increases performance)
+        appids = self.appids
+        labels_dict = self.labels_dict
+        appids_games = self.appids_games
+        std_font = self.std_font
+        size_of_images = self.user_config.SIZE_OF_IMAGES
+        size_of_images = [size_of_images, size_of_images]
+        
+        
+        if not img_dir_empty:
+            for i in range(len(appids)):
+                current_appid = appids[i]
+                text_for_label:str = " " + appids_games[appids[i]]
                 
-                self.img_labels_dict[self.appids[i]].bind(f"<Button-1>", lambda button = self.img_labels_dict[self.appids[i]]: self.update_selected_game(button))
-                
-                self.img_labels_dict[self.appids[i]].grid(row = i, column = 0, sticky = "w")
-                img_i_used = True
-            except:
-                pass
-
-            if not img_i_used: #if no img was used for this appid, add the game, without it
-                try:
-                    text_for_label:str = self.appids_games[self.appids[i]]
-                    if os.listdir(self.helper.CURRENT_DIRECTORY).__contains__("images") and os.listdir(self.helper.CURRENT_DIRECTORY+r"\images") != []:
-                        if os.listdir(self.helper.CURRENT_DIRECTORY+r"\images").__contains__(f"{self.appids[i]}.jpg"):
-                            text_for_label = "     " + text_for_label
-                    self.img_labels_dict[self.appids[i]] = tk.Label(self.choose_game_frame, text = text_for_label,
-                                                                font = self.std_font, compound = "left") #no height, because tkinter doesn't like that; don't ask why
-                    self.img_labels_dict[self.appids[i]].bind(f"<Button-1>", lambda button = self.img_labels_dict[self.appids[i]]: self.update_selected_game(button))
-                    self.img_labels_dict[self.appids[i]].grid(row = i, column = 0, sticky = "w")
+                if imgs.__contains__(current_appid+".jpg"):
+                    img = Image.open(img_dir+"\\"+current_appid+".jpg")
+                    img.resize(size_of_images)
+                    img = ImageTk.PhotoImage(img)
+                    labels_dict[current_appid] = tk.Label(self.choose_game_frame, text = text_for_label,
+                                                                image = img, font = std_font, compound = "left") #compund means the img is left of the text
+                    labels_dict[current_appid].image = img
                     
-                except KeyError as e:
-                    print(e)
+
+
+                else: #if no img was used for this appid, add the game, without it
+                    labels_dict[current_appid] = tk.Label(self.choose_game_frame, text = text_for_label,
+                                                            font = std_font, compound = "left") #no height, because tkinter doesn't like that; don't ask why
+                labels_dict[current_appid].bind(f"<Button-1>", lambda button = labels_dict[current_appid]: self.update_selected_game(button))
+                labels_dict[current_appid].grid(row = i, column = 0, sticky = "w")
+                        
+        else:
+            for i in range(len(appids)):
+                current_appid = appids[i]
+                text_for_label = appids_games[appids[i]]
+                
+                labels_dict[current_appid] = tk.Label(self.choose_game_frame, text = appids_games[current_appid],
+                                                            font = std_font, compound = "left") #no height, because tkinter doesn't like that; don't ask why
+                labels_dict[current_appid].bind(f"<Button-1>", lambda button = labels_dict[current_appid]: self.update_selected_game(button))
+                labels_dict[current_appid].grid(row = i, column = 0, sticky = "w")
+
+        self.labels_dict = labels_dict
+
             
 
 
@@ -203,7 +223,7 @@ class window():
         #the label is stored in img_labels_dict with the index of the appid; event.widget returns the widget, wich triggered the event (in this case, that it was pressed)
         #the .cget("text") just returns the text of the pressed label (the app_name); because that might start with whitspace characters (" "; "\t") they are getting removed
         #finally you get the needed appid by inserting the app_name into the dict, which then is the key to the dict storing the labels, returning the pressed label
-        pressed_label:tk.Label = self.img_labels_dict[self.games_appids[self.helper.remove_leading_whitespaces_and_tabs(event.widget.cget("text"))]]
+        pressed_label:tk.Label = self.labels_dict[self.games_appids[self.helper.remove_leading_whitespaces_and_tabs(event.widget.cget("text"))]]
         pressed_label.config(font = self.std_font_underline)
         
         self.last_pressed_label = pressed_label
@@ -227,7 +247,7 @@ class window():
         else:
             webbrowser.open(rf"steam://rungameid/{self.games_appids[app]}") #self.games_appids[app] is equivalent to the appid
         
-        exit()
+        sys.exit()
     
     
     def scroll(self, event):
