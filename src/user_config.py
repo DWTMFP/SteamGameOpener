@@ -7,7 +7,7 @@ X_POS_OF_WINDOW:str = "0" #std "0"
 Y_POS_OF_WINDOW:str = "0" #std "0"
 
 HEIGHT_SCROLLBAR = 900 #std 600; It's the height of the Scrollbar in Pixels
-WIDTH_SCROLLBAR = 625 #std 525
+WIDTH_SCROLLBAR = 525 #std 525
 HEIGHT = None #std None; It's the height in pixels, of the window, can't drop below a certain size so the games are not being displayed of screen 
 WIDTH = None #std None; only if both, HEIGHT and WIDTH are set to None, the window will choose the size it needs.
 

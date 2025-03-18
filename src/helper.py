@@ -14,17 +14,13 @@ class Helper():
         #in the Steam\steamapps folder there are appmanifest_{appid}.acf files of all steam games, which are installed locally
         folder = os.listdir(user_data.PATH_TO_STEAM.removesuffix("\\")+r"\steamapps")
         
-        appids_not_usable:list[str] = [] #not usable, because they will contain rest of the file name
         appids:list[str] = [] 
 
         for file in folder:
             if file.startswith("appmanifest_"):
-                appids_not_usable.append(file)
-
-        for appid in appids_not_usable:
-            appids.append(appid.removeprefix("appmanifest_").removesuffix(".acf"))
-
-        
+                appids.append(file.removeprefix("appmanifest_").removesuffix(".acf"))
+                
+        self.appids = appids
         return appids
 
 
@@ -35,42 +31,35 @@ class Helper():
             for element in os.listdir(path_to_images):
                 used_appids.append(element.replace(".jpg", ""))
 
-            
+        self.used_appids = used_appids    
         return used_appids
-                                    
-
-    def get_game_name_from_appid(self, appid):
-        file = user_data.PATH_TO_STEAM + fr"\steamapps\appmanifest_{appid}.acf"
-        with open(file) as f:
-            text = f.read()
+    
+    def get_game_names_and_install_dirs(self, appids:list[str]):
+        game_names = []
+        install_dirs = []
+        for appid in appids:
+            file = user_data.PATH_TO_STEAM + fr"\steamapps\appmanifest_{appid}.acf"
+            with open(file) as f:
+                text = f.read()
+                
+            text = text.split("\n")
             
-        text = text.split("\n")
-        
-        for line in text:
-            line = line.replace("\t","").replace("\"","")
-            if line.startswith("name"):
-                return line.replace("name","")
+            for line in text:
+                line = line.replace("\t","").replace("\"","")
+                if line.startswith("name"):
+                    game_names.append(line.replace("name",""))
+                if line.startswith("installdir"):
+                    install_dirs.append(line.replace("installdir",""))
+        self.games = game_names
+
+        return game_names, install_dirs
 
 
-    def get_games_appids_dict(self, appids:list[str]) -> dict[str:str]:
-        '''
-        The dictionary will have the app names as keys and the appids as values
-        '''
-        games_appids_dict:dict[str:str] = {} #dictionary with app names as keys and appids as values
-        
-        for appid in appids:
-            games_appids_dict[self.get_game_name_from_appid(appid)] = appid
-        
-        return games_appids_dict
-
-
-    def get_appids_games_dict(self, appids:list[str]) -> dict[str:str]:
-        appids_games_dict = {}
-        
-        for appid in appids:
-            appids_games_dict[appid] = self.get_game_name_from_appid(appid)
-        
-        return appids_games_dict
+    def create_dict(self, keys:list[str], values:list[str]):
+        d = {}
+        for i in range(len(keys)):
+            d[keys[i]] = values[i]
+        return d
 
 
 
@@ -87,7 +76,7 @@ class Helper():
 
 
     def create_imgs(self):
-        appids = self.get_appids()
+        appids = self.appids
         used_appids = self.get_used_appids()
 
 
@@ -123,9 +112,9 @@ class Helper():
     
     def get_games(self):
         games = []
-        appids = self.get_appids()
+        appids = self.appids()
         for appid in appids:
-            games.append(self.get_game_name_from_appid(appid))
+            games.append(self.get_game_name_and_install_dir_from_appid(appid))
         return games
     
     def get_games_from_txt(self):
@@ -139,9 +128,26 @@ class Helper():
             games.append(line)
         return games
     
+    def reorder_game_names(self, game_names):
+        if not os.listdir(self.CURRENT_DIRECTORY).__contains__("games.txt"):
+            return game_names
+        
+        sorted_games = self.get_games_from_txt() 
+        for sorted_game in sorted_games:
+            if sorted_game not in game_names:
+                sorted_games.remove(sorted_game)
+        
+        return sorted_games
+        
+        
+    def reorder_appids(self, games, games_appids):
+        return [games_appids[game] for game in games]
+    
+    def reorder_install_dirs(self, games, games_install_dir):
+        return [games_install_dir[game] for game in games]
     
     def write_games_to_txt(self):
-        games = self.get_games()
+        games = self.games
         s=str()
         for game in games:
             s+=game + "\n"
@@ -149,7 +155,7 @@ class Helper():
             file.write(s)
     
     def write_new_games_to_txt(self):
-        games = self.get_games()
+        games = self.games
         s=str()
         old_games = self.get_games_from_txt()
         new_games = [game for game in games if game not in old_games] #[games] - [old_games]
