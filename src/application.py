@@ -223,6 +223,12 @@ class window():
         self.helper.create_imgs()
         self.helper.write_new_games_to_txt()
         self.create_complete_dicts()
+                
+        if self.user_config.ONLY_SHOW_THESE_GAMES != []:
+            self.show_certain_games()
+        else:
+            self.exclude_games() #in else, because ``ONLY_SHOW_THESE_GAMES`` is supposed to overwrite
+        
         self.add_games()
             
     def run_exe(self):
