@@ -1,6 +1,5 @@
 import tkinter as tk
 import os
-import glob
 import sys
 import webbrowser
 from helper import Helper
