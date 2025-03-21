@@ -164,7 +164,7 @@ class window():
         std_font = self.std_font
         size_of_images = self.user_config.SIZE_OF_IMAGES
         size_of_images = [size_of_images, size_of_images]
-        
+        print(size_of_images)
         
         if not img_dir_empty:
             for i in range(len(appids)):
@@ -177,7 +177,7 @@ class window():
                 
                 if imgs.__contains__(current_appid+".jpg"):
                     img = Image.open(img_dir+"\\"+current_appid+".jpg")
-                    img.resize(size_of_images)
+                    img = img.resize(size_of_images)
                     img = ImageTk.PhotoImage(img)
                     labels_dict[current_appid] = tk.Label(self.choose_game_frame, text = text_for_label,
                                                                 image = img, font = std_font, compound = "left") #compund means the img is left of the text
@@ -192,6 +192,10 @@ class window():
                         
         else:
             for i in range(len(appids)):
+                if self.user_config.HIDE_STEAMWORKS_COMMON_REDISTRIBUTABLES:
+                    if current_appid == "228980":
+                        continue
+                
                 current_appid = appids[i]
                 text_for_label = appids_games[appids[i]]
                 

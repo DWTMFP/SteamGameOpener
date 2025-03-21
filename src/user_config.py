@@ -13,7 +13,7 @@ WIDTH = None #std None; only if both, HEIGHT and WIDTH are set to None, the wind
 
 STANDARD_FONT:list = ["Arial", 20] #std ["Arial", 20]; font(str) and size(int); Must have two items in it
 
-SIZE_OF_IMAGES:int = 29 #std 29
+SIZE_OF_IMAGES:int = 31 #std 31
 
 #sorting stuff
 SORT_BY_APPID:bool = False #std False

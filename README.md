@@ -14,7 +14,7 @@ I don't know, if the code runs on other Operating Systems than Windows, so yeah 
 # Getting started
 1. Download the files<br> since you only need the files in the src folder, you can delete the other files and extract all files from said folder
 2. Open the user_data.py in a text or code editor
-3. Fill in at least the path to steam, if you want images next to the names, you have to also insert your Steam API Key and your Steam Profile ID. This is because, in order to get the images the program uses the Steam API and for the API request, it needs these informations.<br>Please note, that this will not work for Games, which you have via family library, because it get's the images from your Steam Games, and Games which you have downloaded via family, are not in this list of games. (Maybe I will add that feature later) 
+3. Fill in at least the path to steam, if you want images next to the names, you have to also insert your Steam API Key and your Steam Profile ID. This is because, in order to get the images the program uses the Steam API and for the API request, it needs these informations.<br>Please note, that this will not work for Games, which you have via family library, because it get's the images from your Steam Games, and Games which you have downloaded via family, are not in this list of games. (You can add those images manually, by Navigating to Steam\steam\games and then renaming the .ico to .jpg and saving in in the image directory, which will be created by this programm)
 4. run run_Starter.bat
 5. If it works, you can click on update (only, if you have entered the Steam API Key and your Steam Profile ID) and the Icons should appear (this takes a while)
 

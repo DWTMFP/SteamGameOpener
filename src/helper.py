@@ -99,8 +99,8 @@ class Helper():
             try:
                 img = f"http://media.steampowered.com/steamcommunity/public/images/apps/{appid}/{game_icons[appid]}.jpg"
                 self.download_image(img, os.path.join(self.CURRENT_DIRECTORY, rf'.\images\{appid}.jpg'))
-            except:
-                pass
+            except Exception as e:
+                print(e)
     
     def remove_leading_whitespaces_and_tabs(self, s:str):
         for i in range(len(s)):
