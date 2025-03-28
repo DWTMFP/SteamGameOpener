@@ -2,11 +2,11 @@ import tkinter as tk
 import os
 import sys
 import webbrowser
-from helper import Helper
 from PIL import ImageTk, Image
 from copy import deepcopy
 
 
+from helper import Helper
 import user_data
 
 
@@ -164,7 +164,7 @@ class window():
         std_font = self.std_font
         size_of_images = self.user_config.SIZE_OF_IMAGES
         size_of_images = [size_of_images, size_of_images]
-        print(size_of_images)
+
         
         if not img_dir_empty:
             for i in range(len(appids)):

@@ -8,7 +8,7 @@ import user_data
 
 class Helper():
     CURRENT_DIRECTORY = os.path.dirname(os.path.abspath(__file__))
-    
+    appids = None
     
     def get_appids(self):
         #in the Steam\steamapps folder there are appmanifest_{appid}.acf files of all steam games, which are installed locally
@@ -111,11 +111,12 @@ class Helper():
         return s
     
     def get_games(self):
-        games = []
-        appids = self.appids()
-        for appid in appids:
-            games.append(self.get_game_name_and_install_dir_from_appid(appid))
-        return games
+        if self.appids != None:
+            return self.get_game_names_and_install_dirs(self.appids)[0]
+        else:
+            appids = self.get_appids()
+            return self.get_game_names_and_install_dirs(appids)[0]
+            
     
     def get_games_from_txt(self):
         "gets games, which are in games.txt"

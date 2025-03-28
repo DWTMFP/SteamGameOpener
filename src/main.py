@@ -1,7 +1,8 @@
-import application
 import importlib
 import argparse
 import os
+
+import application
 
 #getting arguments from command line
 parser = argparse.ArgumentParser()
