@@ -11,7 +11,7 @@ You need to have python installed on your computer.
 You have to install the following modules:
 - Pillow
 - Requests
-To install these, go to [[#Installing]]
+To install these, go to [Installing](#Installing)
 
 I don't know, if the code runs on other Operating Systems than Windows, so yeah if your on Linux or Mac, Good Luck.
 
@@ -25,7 +25,7 @@ I don't know, if the code runs on other Operating Systems than Windows, so yeah 
 
 1. Download the files<br>since you only need the files in the src folder, you can delete the other files and extract all files from said folder
 2. Open the user_data.py in a text or code editor
-3. Fill in at least the path to steam, if you want images next to the names, you have to also insert your Steam API Key and your Steam Profile ID.<br>For further information go to [[#adding image Icons|adding image Icons]]
+3. Fill in at least the path to steam, if you want images next to the names, you have to also insert your Steam API Key and your Steam Profile ID.<br>For further information go to [adding image Icons](#adding%20image%20Icons)
 4. run run_Starter.bat
 5. If it works, you can click on update (only, if you have entered the Steam API Key and your Steam Profile ID) and the Icons should appear (this takes a while)
 

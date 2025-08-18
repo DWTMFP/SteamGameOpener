@@ -60,6 +60,9 @@ class window():
         self.last_pressed_label = self.labels_dict[self.appids[0]]
         self.last_pressed_label.config(font = self.std_font_underline)
     
+    def disp(self):
+        self.master.mainloop()
+    
     
     def create_scrollable_frame(self):
         self.choose_game_frame_master = tk.Frame(self.master)#master, so i can put the actual frame in it (to enable scrolling)
@@ -109,9 +112,6 @@ class window():
             self.appids.remove("228980")
             
     
-        
-        
-
     def create_complete_dicts(self):
         appids = self.helper.get_appids()
 
@@ -156,7 +156,7 @@ class window():
             if os.listdir(img_dir) != []:
                 img_dir_empty = False
                 imgs = os.listdir(img_dir)
-        
+       
         #make class vars to local vars (I hope this increases performance)
         appids = self.appids
         labels_dict = self.labels_dict
@@ -206,8 +206,6 @@ class window():
 
         self.labels_dict = labels_dict
 
-            
-
 
     def update_selected_game(self, event):
         self.last_pressed_label.config(font = self.std_font)
@@ -219,8 +217,6 @@ class window():
         pressed_label.config(font = self.std_font_underline)
         
         self.last_pressed_label = pressed_label
-
-
 
     def update(self):
         self.helper.create_imgs()
@@ -246,8 +242,10 @@ class window():
         if self.web_url:
             webbrowser.open(rf"steam://rungameid/{self.games_appids[app]}") #self.games_appids[app] is equivalent to the appid
             sys.exit()
+            
         else: #via exe
-            folder_of_exe = user_data.PATH_TO_STEAM + fr"\steamapps\common\{self.games_install_dirs[app]}"
+            if int(self.games_appids[app]) < 0: folder_of_exe = self.games_install_dirs[app] #for creating shortcuts to other apps
+            else: folder_of_exe = user_data.PATH_TO_STEAM + fr"\steamapps\common\{self.games_install_dirs[app]}"
             all_executables = []
             exes_without_path = []
             for root, dirs, files in os.walk(folder_of_exe):
@@ -322,9 +320,8 @@ def main(user_config):
     else:
         root.geometry(f"{user_config.WIDTH}x{user_config.HEIGHT}+{user_config.X_POS_OF_WINDOW}+{user_config.Y_POS_OF_WINDOW}")
     
-    window(root, user_config)
-
-    root.mainloop()
+    w = window(root, user_config)
+    w.disp()
 
 
 
