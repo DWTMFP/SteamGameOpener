@@ -1,27 +1,33 @@
-import importlib
+from app import display_gui, display_game_appid
+from utils.constants import STANDARD_CONFIG_PATH, SRC_DIR
+from utils.general import get_images
+from utils.yaml_files import get_user_data
 import argparse
-import os
+from pathlib import Path
 
-import application
+def main():
+    parser = argparse.ArgumentParser()
 
-#getting arguments from command line
-parser = argparse.ArgumentParser()
-parser.add_argument("-cfg_file", help = "The Name of the config file")
-args = parser.parse_args()
+    parser.add_argument("--appids", action="store_true", help = "Show the App ID for every game")
+    parser.add_argument("--copy_icons",  action="store_true", help = "Copy the Steam Icons to the image folder")
+    parser.add_argument("--no_main",  action="store_true", help = "Does not open the main programm, if this is parsed\tUseful for --copy_icons")
+    parser.add_argument("--config", "-c", default=STANDARD_CONFIG_PATH, help = "The Name of the config file")
 
-def start_with_std_cnfg():
-    if os.listdir().__contains__("user_config.py"):
-        import user_config
-        application.main(user_config)
-    else:
-        print("No file named user_config.py exists, make sure, you haven't renamed the file, nor deleted it.")
+    args = parser.parse_args()
 
+    
+    config_path = Path(args.config)
+    if not config_path.is_absolute():
+        config_path = SRC_DIR / config_path
+    
+    if args.copy_icons:
+        user_data = get_user_data()
+        get_images(user_data)
 
-if args.cfg_file != None: #a config file was parsed
-    if os.listdir().__contains__(args.cfg_file.removesuffix(".py")+".py"):
-        application.main(importlib.import_module(args.cfg_file.removesuffix(".py")))
-    else:
-        print("Wrong Module Name, starting with standard config file")
-        start_with_std_cnfg()
-else:
-    start_with_std_cnfg()
+    if args.appids:
+        display_game_appid(config_path)
+    elif not args.no_main:
+        display_gui(config_path)
+
+if __name__ == "__main__":
+    main()

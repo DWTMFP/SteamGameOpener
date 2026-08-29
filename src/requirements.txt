@@ -1,0 +1,5 @@
+requests
+PyYAML
+pydantic
+pillow
+PySide6
