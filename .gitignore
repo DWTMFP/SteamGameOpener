@@ -1,5 +1,5 @@
-LICENSE
-games.txt
-__pycache__
-images
+src/games.txt
+src/Images
+src/*.yaml
 my_configs
+__pycache__
