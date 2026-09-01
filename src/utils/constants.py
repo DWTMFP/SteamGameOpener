@@ -2,7 +2,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Iterable
 # Paths and directories
-SRC_DIR = Path(__file__).resolve().parent.parent
+SRC_DIR = Path(__file__).resolve().parent.parent # Path(__file__) → src/utils/constants.py
 STANDARD_CONFIG_PATH = SRC_DIR / "config.yaml"
 USER_DATA_PATH = SRC_DIR / "userData.yaml"
 IMG_DIR = SRC_DIR/ "Images"
@@ -80,7 +80,7 @@ class CONFIG_YAML_STRINGS:
     scrollbar_color_border = "border"
     
     sort_by = "Sort By"
-    sort_by_appid = "appid"
+    sort_by_appid = "Appid"
     sort_by_custom = "Custom Order"
     
     games = "Games"
@@ -182,7 +182,7 @@ def generate_config_str():
   {CONFIG_YAML_STRINGS.window_foreground}: {window_foreground}  #default: {window_foreground}
 
   {CONFIG_YAML_STRINGS.window_pos}:
-    # If both x and y position are set to "null", the window will center itself
+    # If both x and y position are set to "null", the window will be centered
     {CONFIG_YAML_STRINGS.window_x_pos}: {window_x_pos} #default: {window_x_pos}
     {CONFIG_YAML_STRINGS.window_y_pos}: {window_y_pos} #default: {window_y_pos}
 
@@ -208,8 +208,7 @@ def generate_config_str():
   # To change the order of games, go to the games.txt file (will be created, upon first start) and change the order of games there
   # you are allowed to insert lines without characters
   # Additionally deleting one game from there, makes it dissapear (until next rescan (update button))
-  # If you want to exclude a game from showing up, GAMES_TO_EXCLUDE is recommended, because otherwise they will be readded
-  # If you click on update, the games will be stored in new_games.txt, and you have to copy them from there to games.txt. In that way the old order won't get overwritten.
+  # If you want to exclude a game from showing up, {CONFIG_YAML_STRINGS.games_exlude} is recommended, because otherwise they will be readded
   # ``SORT_BY_CUSTOM_ORDER`` takes priorisation over ``SORT_BY_APPID``
 
   {CONFIG_YAML_STRINGS.sort_by_appid}:  {sort_by_appid} #default: {sort_by_appid}
@@ -262,7 +261,7 @@ def generate_userData_str():
 
 
 # To get your profile ID, go into Steam -> Settings
-# The link in the upper left corner has the form of https://steamcommunity.com/profiles/{{profile ID}}/
+# The link in the upper left corner has the form of https://steamcommunity.com/profiles/<profile ID>/
 # If you click on that link, it will copy to clipboard, making it easier for you to enter your ID here
 # Again insert it between the apostrophes
 {USER_DATA_YAML_STRINGS.profile_id}: {profile_id}
@@ -273,7 +272,7 @@ def generate_userData_str():
   {USER_DATA_YAML_STRINGS.hashes_to_ignore}: {hashes_to_ignore}
   
   # If True, unknown hashes will not be copied when fetching icons offline.
-  {USER_DATA_YAML_STRINGS.ignore_unkown}: {ignore_unkown_hashes}
+  {USER_DATA_YAML_STRINGS.ignore_unkown}: {ignore_unkown_hashes} #default: {ignore_unkown_hashes}
 
   # declares how it fetches the icons:
   # auto:

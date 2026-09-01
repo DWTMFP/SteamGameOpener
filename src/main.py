@@ -1,7 +1,8 @@
 from app import display_gui, display_game_appid
-from utils.constants import STANDARD_CONFIG_PATH, SRC_DIR
-from utils.general import get_images
-from utils.yaml_files import get_user_data
+from utils import (
+    STANDARD_CONFIG_PATH, SRC_DIR,
+    get_images, get_user_data,
+)
 import argparse
 from pathlib import Path
 

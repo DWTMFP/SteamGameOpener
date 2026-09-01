@@ -24,7 +24,7 @@ class MainWindow(BaseModel):
     position: Position = Field(default_factory = Position)
     size: Size = Field(default_factory = Size)
     font: Font = Field(default_factory = Font)
-    size_of_images: int = DefaultConfigValues.window_img_size
+    size_of_images: int | None = DefaultConfigValues.window_img_size
 
 class ScrollbarColor(BaseModel):
     background:str = DefaultConfigValues.scollbar_background

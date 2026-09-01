@@ -1,14 +1,12 @@
 from pathlib import Path
 
-from utils.yaml_files import (
+
+from utils import (
+    IMG_DIR, STANDARD_CONFIG_PATH,
+    run_exe, get_QScrollBar_style_sheet, get_images, validate_list,
     get_config, create_config, get_user_data, create_user_data,
     Config, UserData, 
-)
-from utils.constants import IMG_DIR, STANDARD_CONFIG_PATH
-from utils.configs import MainWindow as Config_MainWindow
-from utils.general import(
-    run_exe, get_QScrollBar_style_sheet, get_images, validate_list,
-    SteamGameManager,
+    SteamGameManager, Config_MainWindow, Config_Font, Scrollbar
 )
 
 import webbrowser
@@ -17,25 +15,25 @@ import logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtGui import QFont, QIcon, QImage
 from PySide6.QtWidgets import (
     QMainWindow, QApplication,
     QVBoxLayout, QHBoxLayout, QGridLayout,
     QListWidget, QListWidgetItem,
     QWidget,
     QLabel, QPushButton, QSizePolicy,
-    QAbstractItemView, QAbstractScrollArea
+    QAbstractItemView, QAbstractScrollArea, 
 )
 
 class ChooseExe(QWidget):
-    def __init__(self, config:Config, item:QListWidgetItem, exes: list[Path]):
+    def __init__(self, scrollbar: Scrollbar, font:Config_Font, item:QListWidgetItem, icon_size:QSize ,exes: list[Path]):
         super().__init__()
         self.setSizePolicy(
             QSizePolicy.Policy.Preferred,
             QSizePolicy.Policy.Preferred
         )
         
-        img_size = config.main_window.size_of_images
+        
         
         main_layout = QVBoxLayout()
         lbl_layout = QHBoxLayout()
@@ -43,7 +41,9 @@ class ChooseExe(QWidget):
             
         # == Top Line ==
         self.img_lbl = QLabel()
-        self.img_lbl.setPixmap(item.icon().pixmap(img_size, img_size))
+        if not item.icon().isNull():
+            self.img_lbl.setPixmap(item.icon().pixmap(icon_size))
+
         
         lbl_layout.addStretch()
         lbl_layout.addWidget(QLabel("Please choose the correct exe for:\t"))
@@ -58,10 +58,10 @@ class ChooseExe(QWidget):
         # == Exe Selection ==
         exe_selection = QListWidget()
         exe_selection.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        exe_selection.setStyleSheet(get_QScrollBar_style_sheet(config.scrollbar.color))
-        exe_selection.setIconSize(QSize(config.main_window.size_of_images, config.main_window.size_of_images))
+        exe_selection.setStyleSheet(get_QScrollBar_style_sheet(scrollbar.color))
+        exe_selection.setIconSize(icon_size)
         exe_selection.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
-        exe_selection.setFont(QFont(config.main_window.font.family,config.main_window.font.size))
+        exe_selection.setFont(QFont(font.family, font.size))
         exe_selection.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         
         # == Add Exes ==
@@ -155,7 +155,8 @@ class MainWindow(QMainWindow):
         self.games_widget = QListWidget()
         self.games_widget.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.games_widget.setStyleSheet(get_QScrollBar_style_sheet(config.scrollbar.color))
-        self.games_widget.setIconSize(QSize(self.img_size, self.img_size))
+        if self.img_size is not None:
+            self.games_widget.setIconSize(QSize(self.img_size, self.img_size))
         self.games_widget.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         self.games_widget.setFont(QFont(config.main_window.font.family,config.main_window.font.size))
         self.games_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -204,10 +205,11 @@ class MainWindow(QMainWindow):
             else:
                 item = QListWidgetItem(game_name)
 
+            
             item.setSizeHint(
                 QSize(
                     self.games_widget.width(),
-                    self.img_size + 10
+                    self.img_size + 10 if self.img_size is not None else 10
                 )
             )
 
@@ -246,7 +248,7 @@ class MainWindow(QMainWindow):
 
             # Didn't work either
             logging.info("Giving up to autodetect, now choose yourself.")
-            self.exe_chooser = ChooseExe(self.config, self.games_widget.currentItem(), all_exes)
+            self.exe_chooser = ChooseExe(self.config.scrollbar, self.config.main_window.font, self.games_widget.currentItem(), self.games_widget.iconSize(), all_exes)
             self.exe_chooser.show()
             
             
@@ -295,7 +297,8 @@ class GameAppidGUI(QMainWindow):
         
         list_widget.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         list_widget.setStyleSheet(get_QScrollBar_style_sheet(config.scrollbar.color))
-        list_widget.setIconSize(QSize(img_size, img_size))
+        if img_size is not None:
+            list_widget.setIconSize(QSize(img_size, img_size))
         list_widget.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         list_widget.setFont(QFont(config.main_window.font.family,config.main_window.font.size))
         list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
