@@ -40,8 +40,8 @@ class SortBy(BaseModel):
     custom: bool = DefaultConfigValues.sort_by_custom
 
 class Games(BaseModel):
-    exclude:   list[str | None] = []
-    only_show: list[str | None] = []
+    exclude:   list[str | int | None] = []
+    only_show: list[str | int | None] = []
     
     hide_steamworks_common_redistributables: bool = DefaultConfigValues.hide_steamworks_commmon
 

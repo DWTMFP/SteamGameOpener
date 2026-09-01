@@ -1,11 +1,12 @@
 from pathlib import Path
 
+from typing import Iterable
 
 from utils import (
     IMG_DIR, STANDARD_CONFIG_PATH,
-    run_exe, get_QScrollBar_style_sheet, get_images, validate_list,
+    run_exe, get_QScrollBar_style_sheet, get_images, validate_iterable,
     get_config, create_config, get_user_data, create_user_data,
-    Config, UserData, 
+    Config, UserData, Game,
     SteamGameManager, Config_MainWindow, Config_Font, Scrollbar
 )
 
@@ -103,8 +104,8 @@ class MainWindow(QMainWindow):
         games_to_exclude = config.games.exclude
         if config.games.hide_steamworks_common_redistributables:
             games_to_exclude.append("Steamworks Common Redistributables")
-        self.games_to_exclude = validate_list(games_to_exclude)
-        self.only_these_games = validate_list(config.games.only_show)
+        self.games_to_exclude = validate_iterable(games_to_exclude)
+        self.only_these_games = validate_iterable(config.games.only_show)
         
         # ============
         # == Layout ==
@@ -188,14 +189,18 @@ class MainWindow(QMainWindow):
     def add_games(self):
         self.games_widget.clear()
         
+        only_these_games = self.only_these_games
+        exclude_these_games = self.games_to_exclude
+        
         for game in self.steam_data.get_listed_games():
-            game_name = game.name
-            if self.only_these_games and game_name not in self.only_these_games:
-                continue
-            elif self.games_to_exclude and game_name in self.games_to_exclude:
-                continue
 
+            game_name = game.name
             appid = game.appid
+            
+            if only_these_games and game_name not in only_these_games and appid not in only_these_games:
+                continue
+            elif exclude_these_games and (game_name in exclude_these_games or appid in exclude_these_games):
+                continue
 
             img_name = str(appid) + ".jpg"
             img_path = IMG_DIR / img_name

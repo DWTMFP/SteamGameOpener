@@ -16,18 +16,17 @@ from .configs import Config, UserData
     
 def convert_yaml_keys(data: dict, key_mapping:dict[str,str]) -> dict:
     for key in list(data.keys()):
-            value = data.pop(key)
+        value = data.pop(key)
 
-            new_key = key_mapping.get(key)
-            if new_key is None:
-                logging.warning(f'unkown key: "{key}", will be skipped')
-                continue
+        new_key = key_mapping.get(key)
+        if new_key is None:
+            logging.warning(f'Unkown key: "{key}", will be skipped')
+            continue
 
-            if isinstance(value, dict):
-                value = convert_yaml_keys(value, key_mapping)
-            
+        if isinstance(value, dict):
+            value = convert_yaml_keys(value, key_mapping)
 
-            data[new_key] = value
+        data[new_key] = value
 
     return data
 
@@ -43,7 +42,7 @@ def get_config(config_path:Path) -> Config:
         return Config()
     
     try:
-        with open(STANDARD_CONFIG_PATH, encoding="utf-8") as f:
+        with open(config_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
     except yaml.YAMLError as e:
         logging.warning("Invalid YAML syntax: %s", e)

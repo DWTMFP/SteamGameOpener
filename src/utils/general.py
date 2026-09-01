@@ -3,6 +3,7 @@ import requests
 import logging
 from PIL import Image
 
+from typing import Iterable
 from pathlib import Path
 from dataclasses import dataclass
 from copy import deepcopy
@@ -10,8 +11,6 @@ from copy import deepcopy
 from steam_appinfo_parser.parse_appinfo import iter_apps
 from .configs import UserData, ScrollbarColor
 from .constants import GAMES_PATH, IMG_DIR, USER_DATA_PATH
-
-
 
 
 # ===================
@@ -70,6 +69,9 @@ class SteamGameManager():
         games = []
         
         for game_name in game_names:
+            if game_name not in self.__game_by_name.keys():
+                logging.warning(f"Game {game_name} appears to be deinstalled.")
+                continue
             appid = self.get_appid(game_name)
             install_dir = self.get_install_dir(game_name = game_name)
             games.append(Game(appid, game_name, install_dir))
@@ -335,7 +337,7 @@ def copy_icons(user_data:UserData):
     IMG_DIR.mkdir(parents=True, exist_ok=True)
 
     # hashes to ignore can be None, validate_list doesn't acceppt None, but might return it
-    hashes_to_ignore = validate_list(user_data.get_game_icons.hashes_to_ignore or []) or []
+    hashes_to_ignore = validate_iterable(user_data.get_game_icons.hashes_to_ignore) or set()
 
     # Try identifying via appinfo.vdf
     for icon_hash in existing_hashes:
@@ -409,8 +411,8 @@ def get_images(user_data:UserData):
         
 
 
-def validate_list(l:list[str | None]) -> list[str] | None:
-    ':param list[str | None] l: List to be validated'
-    ':return list[str] | None: None if list is empty after removing ``None`` entrys, else list[str]'
-    l = [game for game in l if game is not None]
-    return l if l else None  # pyright: ignore[reportReturnType]
+def validate_iterable[T](values:Iterable[T | None]) -> set[T] | None:
+    ':param Iterable[T | None] l: List to be validated'
+    ':return Iterable[T] | None: None if list is empty after removing ``None`` entrys, else set[T]'
+    values = {value for value in values if value is not None}
+    return values if values else None

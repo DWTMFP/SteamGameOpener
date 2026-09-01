@@ -79,8 +79,8 @@ From There it downloads the request from:
  | Scrollbar color | Configure the same as ``background`` and ``forground``. Use ``solid <color>`` for the border, otherwise it won't be displayed. |
  | Sort by Appid | Sorts the games by appid instead of your custom order |
  | Sort by Cusom Order | The games appear in the order, given by ``games.txt`` (file will be created upon update button). This option overrides Sort by Appid. |
- | Games exlude | A list of all games, which should not appear in this instance. The name of the app, as in ``games.txt``, currently not the appid. |
- | Games only show | A list of all games, which should be the only games to appear in the instance. Again, only the names written in ``games.txt`` are valid. Be sure to leave it empty, if it is unwanted, since it overwrites Games exclude. |
+ | Games exlude | A list of all games, which should not appear in this instance. The name of the app, as in ``games.txt``, or the appid. |
+ | Games only show | A list of all games, which should be the only games to appear in the instance. Again, the names written in ``games.txt`` and the appid are both valid. Be sure to leave it empty, if it is unwanted, since it overwrites Games exclude. |
  | Hide SteamworksCommon Redistributable | Adds the ``SteamworksCommon Redistributable`` "game" to Games exlude and thus is not shown. |
 
 ## Multiple Instances

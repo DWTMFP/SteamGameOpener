@@ -14,6 +14,6 @@ from utils.configs import (
     Scrollbar
 )
 from utils.general import(
-    run_exe, get_QScrollBar_style_sheet, get_images, validate_list,
-    SteamGameManager,
+    run_exe, get_QScrollBar_style_sheet, get_images, validate_iterable,
+    SteamGameManager, Game
 )
