@@ -98,6 +98,7 @@ python main.py -c <Your Config>
 ## Command line Options
 
 | Option | Explanation |
+| --- | --- |
 | -h --help | Shows the help message, automatically created by the argparse module |
 | -c --config | Either the absolut path to the config, or the relative path to main.py |
 | --copy_icons | Copys the icons, without the update button |
