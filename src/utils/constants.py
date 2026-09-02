@@ -1,36 +1,44 @@
+from collections.abc import Iterable
+from dataclasses import dataclass, field
 from pathlib import Path
-from dataclasses import dataclass
-from typing import Iterable
+
 # Paths and directories
-SRC_DIR = Path(__file__).resolve().parent.parent # Path(__file__) → src/utils/constants.py
+SRC_DIR = (
+    Path(__file__).resolve().parent.parent
+)  # Path(__file__) → src/utils/constants.py
 STANDARD_CONFIG_PATH = SRC_DIR / "config.yaml"
 USER_DATA_PATH = SRC_DIR / "userData.yaml"
-IMG_DIR = SRC_DIR/ "Images"
+IMG_DIR = SRC_DIR / "Images"
 GAMES_PATH = SRC_DIR / "games.txt"
 
 DefaultSteamPath_str = r"C:\Program Files (x86)\Steam"
 
-def _to_yaml_value(value: None | bool | str | int | Iterable, *, indent: int | None = None) -> str:
+
+def _to_yaml_value(
+    value: bool | str | int | Iterable | None,  # noqa: FBT001
+    *,
+    indent: int | None = None,
+) -> str:
     if value is None:
         return "null"
-    elif isinstance(value, bool):
+    if isinstance(value, bool):
         return str(value).lower()
-    elif isinstance(value, str):
+    if isinstance(value, str):
         return f'"{value}"'
-    elif isinstance(value, Iterable):
+    if isinstance(value, Iterable):
         s = "\n"
         if indent:
-            s += indent*" "
+            s += indent * " "
         s += "-"
         for item in value:
-            s += ' ' + _to_yaml_value(item) + '\n'
+            s += " " + _to_yaml_value(item) + "\n"
             if indent:
-                s += indent*" "
+                s += indent * " "
             s += "-"
         return s
-    
-    else:
-        return str(value)
+
+    return str(value)
+
 
 @dataclass(frozen=True)
 class DefaultConfigValues:
@@ -44,20 +52,21 @@ class DefaultConfigValues:
     window_font_family = "Arial"
     window_font_size = 20
     window_img_size = 31
-    
+
     scollbar_handle_color = "grey"
     scollbar_background = "lightgrey"
     scrollbar_border_color = "solid black"
-    
+
     sort_by_appid = False
     sort_by_custom = True
-    
-    excluded_games = []
-    show_only_games = []
+
+    excluded_games: list = field(default_factory=list)
+    show_only_games: list = field(default_factory=list)
     hide_steamworks_commmon = True
 
+
 @dataclass(frozen=True)
-class CONFIG_YAML_STRINGS:
+class ConfigYAMLStrings:
     main_window = "Main Window"
     window_title = "title"
     window_background = "background"
@@ -78,11 +87,11 @@ class CONFIG_YAML_STRINGS:
     scrollbar_color_background = "background"
     scrollbar_color_handle = "handle"
     scrollbar_color_border = "border"
-    
+
     sort_by = "Sort By"
     sort_by_appid = "Appid"
     sort_by_custom = "Custom Order"
-    
+
     games = "Games"
     games_exlude = "exlude"
     games_show_only = "only show"
@@ -90,68 +99,68 @@ class CONFIG_YAML_STRINGS:
 
 
 CONFIG_PYDANTIC_FROM_YAML = {
-    CONFIG_YAML_STRINGS.main_window: "main_window",
-    CONFIG_YAML_STRINGS.window_title: "title",
-    CONFIG_YAML_STRINGS.window_background: "background",
-    CONFIG_YAML_STRINGS.window_foreground: "foreground",
-    CONFIG_YAML_STRINGS.window_pos: "position",
-    CONFIG_YAML_STRINGS.window_x_pos: "x",
-    CONFIG_YAML_STRINGS.window_y_pos: "y",
-    CONFIG_YAML_STRINGS.window_size: "window_size",
-    CONFIG_YAML_STRINGS.window_width: "width",
-    CONFIG_YAML_STRINGS.window_height: "height",
-    CONFIG_YAML_STRINGS.window_font: "font",
-    CONFIG_YAML_STRINGS.font_family: "family",
-    CONFIG_YAML_STRINGS.font_size: "font_size",
-    CONFIG_YAML_STRINGS.img_size: "size_of_images",
-
-    CONFIG_YAML_STRINGS.scrollbar: "scrollbar",
-    CONFIG_YAML_STRINGS.scrollbar_color: "color",
-    CONFIG_YAML_STRINGS.scrollbar_color_background: "background",
-    CONFIG_YAML_STRINGS.scrollbar_color_handle: "handle",
-    CONFIG_YAML_STRINGS.scrollbar_color_border: "border",
-
-    CONFIG_YAML_STRINGS.sort_by: "sort_by",
-    CONFIG_YAML_STRINGS.sort_by_appid: "appid",
-    CONFIG_YAML_STRINGS.sort_by_custom: "custom",
-
-    CONFIG_YAML_STRINGS.games: "games",
-    CONFIG_YAML_STRINGS.games_exlude: "exclude",
-    CONFIG_YAML_STRINGS.games_show_only: "only_show",
-    CONFIG_YAML_STRINGS.games_hide_steamworks:
-        "hide_steamworks_common_redistributables",
+    ConfigYAMLStrings.main_window: "main_window",
+    ConfigYAMLStrings.window_title: "title",
+    ConfigYAMLStrings.window_background: "background",
+    ConfigYAMLStrings.window_foreground: "foreground",
+    ConfigYAMLStrings.window_pos: "position",
+    ConfigYAMLStrings.window_x_pos: "x",
+    ConfigYAMLStrings.window_y_pos: "y",
+    ConfigYAMLStrings.window_size: "window_size",
+    ConfigYAMLStrings.window_width: "width",
+    ConfigYAMLStrings.window_height: "height",
+    ConfigYAMLStrings.window_font: "font",
+    ConfigYAMLStrings.font_family: "family",
+    ConfigYAMLStrings.font_size: "font_size",
+    ConfigYAMLStrings.img_size: "size_of_images",
+    ConfigYAMLStrings.scrollbar: "scrollbar",
+    ConfigYAMLStrings.scrollbar_color: "color",
+    ConfigYAMLStrings.scrollbar_color_background: "background",
+    ConfigYAMLStrings.scrollbar_color_handle: "handle",
+    ConfigYAMLStrings.scrollbar_color_border: "border",
+    ConfigYAMLStrings.sort_by: "sort_by",
+    ConfigYAMLStrings.sort_by_appid: "appid",
+    ConfigYAMLStrings.sort_by_custom: "custom",
+    ConfigYAMLStrings.games: "games",
+    ConfigYAMLStrings.games_exlude: "exclude",
+    ConfigYAMLStrings.games_show_only: "only_show",
+    ConfigYAMLStrings.games_hide_steamworks: "hide_steamworks_common_redistributables",
 }
 
-@dataclass(frozen = True)
+
+@dataclass(frozen=True)
 class DefaultUserDataValues:
-    steam_path = DefaultSteamPath_str.replace("\\", "\\\\") # double \ is needed
+    steam_path = DefaultSteamPath_str.replace("\\", "\\\\")  # double \ is needed
     api_key = ""
     profile_id = ""
-    
-    hashes_to_ignore:tuple[str | None] = ("SteamMovies",)
+
+    hashes_to_ignore: tuple[str | None] = ("SteamMovies",)
     ignore_unkown_hashes = False
     source = "auto"
-    
+
+
 @dataclass(frozen=True)
-class USER_DATA_YAML_STRINGS:
+class UserDataYAMLStrings:
     steam_path = "Steam Path"
     api_key = "Steam API Key"
     profile_id = "Steam Profile ID"
-    
+
     get_game_icons = "Get Game Icons"
     hashes_to_ignore = "Hashes to Ignore"
     ignore_unkown = "Ignore unkown Hashes"
     source = "Source"
 
+
 USER_DATA_PYDANTIC_FROM_YAML = {
-    USER_DATA_YAML_STRINGS.steam_path: "steam_path",
-    USER_DATA_YAML_STRINGS.api_key: "api_key",
-    USER_DATA_YAML_STRINGS.profile_id: "profile_id",
-    USER_DATA_YAML_STRINGS.get_game_icons: "get_game_icons",
-    USER_DATA_YAML_STRINGS.hashes_to_ignore: "hashes_to_ignore",
-    USER_DATA_YAML_STRINGS.ignore_unkown: "ignore_unkown",
-    USER_DATA_YAML_STRINGS.source: "source"
+    UserDataYAMLStrings.steam_path: "steam_path",
+    UserDataYAMLStrings.api_key: "api_key",
+    UserDataYAMLStrings.profile_id: "profile_id",
+    UserDataYAMLStrings.get_game_icons: "get_game_icons",
+    UserDataYAMLStrings.hashes_to_ignore: "hashes_to_ignore",
+    UserDataYAMLStrings.ignore_unkown: "ignore_unkown",
+    UserDataYAMLStrings.source: "source",
 }
+
 
 def generate_config_str():
     window_title = _to_yaml_value(DefaultConfigValues.window_title)
@@ -171,73 +180,76 @@ def generate_config_str():
 
     sort_by_appid = _to_yaml_value(DefaultConfigValues.sort_by_appid)
     sort_by_custom = _to_yaml_value(DefaultConfigValues.sort_by_custom)
-    
-    excluded_games = _to_yaml_value(DefaultConfigValues.excluded_games, indent = 4)
-    show_only_games = _to_yaml_value(DefaultConfigValues.show_only_games, indent = 4)
-    hide_steamworks_commmon = _to_yaml_value(DefaultConfigValues.hide_steamworks_commmon)
 
-    default_config = f'''{CONFIG_YAML_STRINGS.main_window}:
-  {CONFIG_YAML_STRINGS.window_title}: {window_title} #default: {window_title}
-  {CONFIG_YAML_STRINGS.window_background}: {window_background}  #default: {window_background}
-  {CONFIG_YAML_STRINGS.window_foreground}: {window_foreground}  #default: {window_foreground}
+    excluded_games = _to_yaml_value(DefaultConfigValues.excluded_games, indent=4)
+    show_only_games = _to_yaml_value(DefaultConfigValues.show_only_games, indent=4)
+    hide_steamworks_commmon = _to_yaml_value(
+        DefaultConfigValues.hide_steamworks_commmon
+    )
 
-  {CONFIG_YAML_STRINGS.window_pos}:
+    default_config = f"""{ConfigYAMLStrings.main_window}:
+  {ConfigYAMLStrings.window_title}: {window_title} #default: {window_title}
+  {ConfigYAMLStrings.window_background}: {window_background}  #default: {window_background}
+  {ConfigYAMLStrings.window_foreground}: {window_foreground}  #default: {window_foreground}
+
+  {ConfigYAMLStrings.window_pos}:
     # If both x and y position are set to "null", the window will be centered
-    {CONFIG_YAML_STRINGS.window_x_pos}: {window_x_pos} #default: {window_x_pos}
-    {CONFIG_YAML_STRINGS.window_y_pos}: {window_y_pos} #default: {window_y_pos}
+    {ConfigYAMLStrings.window_x_pos}: {window_x_pos} #default: {window_x_pos}
+    {ConfigYAMLStrings.window_y_pos}: {window_y_pos} #default: {window_y_pos}
 
-  {CONFIG_YAML_STRINGS.window_size}:
-    # If both width and height are set to "null", the window automatically adjustes it's size 
-    {CONFIG_YAML_STRINGS.window_width}:  {window_widht} #default: {window_widht}
-    {CONFIG_YAML_STRINGS.window_height}: {window_height} #default: {window_height}
+  {ConfigYAMLStrings.window_size}:
+    # If both width and height are set to "null", the window automatically adjustes it's size
+    {ConfigYAMLStrings.window_width}:  {window_widht} #default: {window_widht}
+    {ConfigYAMLStrings.window_height}: {window_height} #default: {window_height}
 
-  {CONFIG_YAML_STRINGS.window_font}:
-    {CONFIG_YAML_STRINGS.font_family}: {window_font_family} #default: {window_font_family}
-    {CONFIG_YAML_STRINGS.font_size}:   {window_font_size}      #default: {window_font_size}
+  {ConfigYAMLStrings.window_font}:
+    {ConfigYAMLStrings.font_family}: {window_font_family} #default: {window_font_family}
+    {ConfigYAMLStrings.font_size}:   {window_font_size}      #default: {window_font_size}
 
-  {CONFIG_YAML_STRINGS.img_size}: {window_img_size} #default: {window_img_size}
+  {ConfigYAMLStrings.img_size}: {window_img_size} #default: {window_img_size}
 
-{CONFIG_YAML_STRINGS.scrollbar}:
-  {CONFIG_YAML_STRINGS.scrollbar_color}:
-    {CONFIG_YAML_STRINGS.scrollbar_color_background}: {scrollbar_backgound}   #default: {scrollbar_backgound}
-    {CONFIG_YAML_STRINGS.scrollbar_color_handle}:     {scrollbar_handle_color}        #default: {scrollbar_handle_color}
-    {CONFIG_YAML_STRINGS.scrollbar_color_border}:     {scrollbar_border_color} #default: {scrollbar_border_color}, apparently needs "solid" in front of it
+{ConfigYAMLStrings.scrollbar}:
+  {ConfigYAMLStrings.scrollbar_color}:
+    {ConfigYAMLStrings.scrollbar_color_background}: {scrollbar_backgound}   #default: {scrollbar_backgound}
+    {ConfigYAMLStrings.scrollbar_color_handle}:     {scrollbar_handle_color}        #default: {scrollbar_handle_color}
+    {ConfigYAMLStrings.scrollbar_color_border}:     {scrollbar_border_color} #default: {scrollbar_border_color}, apparently needs "solid" in front of it
 
 
-{CONFIG_YAML_STRINGS.sort_by}:
+{ConfigYAMLStrings.sort_by}:
   # To change the order of games, go to the games.txt file (will be created, upon first start) and change the order of games there
   # you are allowed to insert lines without characters
   # Additionally deleting one game from there, makes it dissapear (until next rescan (update button))
-  # If you want to exclude a game from showing up, {CONFIG_YAML_STRINGS.games_exlude} is recommended, because otherwise they will be readded
+  # If you want to exclude a game from showing up, {ConfigYAMLStrings.games_exlude} is recommended, because otherwise they will be readded
   # ``SORT_BY_CUSTOM_ORDER`` takes priorisation over ``SORT_BY_APPID``
 
-  {CONFIG_YAML_STRINGS.sort_by_appid}:  {sort_by_appid} #default: {sort_by_appid}
-  {CONFIG_YAML_STRINGS.sort_by_custom}: {sort_by_custom}  #default: {sort_by_custom}
+  {ConfigYAMLStrings.sort_by_appid}:  {sort_by_appid} #default: {sort_by_appid}
+  {ConfigYAMLStrings.sort_by_custom}: {sort_by_custom}  #default: {sort_by_custom}
 
-{CONFIG_YAML_STRINGS.games}:
+{ConfigYAMLStrings.games}:
   # To add games, write their name after the minus (-)
   # Every Game needs a newline with a minus in front
-  {CONFIG_YAML_STRINGS.games_exlude}: {excluded_games}
+  {ConfigYAMLStrings.games_exlude}: {excluded_games}
   # only_show overwrites exclude
-  {CONFIG_YAML_STRINGS.games_show_only}: {show_only_games}
+  {ConfigYAMLStrings.games_show_only}: {show_only_games}
 
-  {CONFIG_YAML_STRINGS.games_hide_steamworks}: {hide_steamworks_commmon} #default: {hide_steamworks_commmon}
-'''
+  {ConfigYAMLStrings.games_hide_steamworks}: {hide_steamworks_commmon} #default: {hide_steamworks_commmon}
+"""
     return default_config
 
-def generate_userData_str():
+
+def generate_user_data_str():
     steam_path = _to_yaml_value(DefaultUserDataValues.steam_path)
     api_key = _to_yaml_value(DefaultUserDataValues.api_key)
     profile_id = _to_yaml_value(DefaultUserDataValues.profile_id)
-    hashes_to_ignore = _to_yaml_value(DefaultUserDataValues.hashes_to_ignore, indent = 4)
+    hashes_to_ignore = _to_yaml_value(DefaultUserDataValues.hashes_to_ignore, indent=4)
     ignore_unkown_hashes = _to_yaml_value(DefaultUserDataValues.ignore_unkown_hashes)
     source = _to_yaml_value(DefaultUserDataValues.source)
-    
-    return fr"""# The path to the steam installation is necessary, in order to get your games
+
+    return rf"""# The path to the steam installation is necessary, in order to get your games
 
 # The Steam API Key and the Steam Profile ID are only needed, if you want to have the Icons of the Steam Games in the programm to reliably appear.
 # The online fetching of images doesn't work if the games are in your family library.
-# To fetch icons offline change "Source" under "Get Game Icons" to "offline" 
+# To fetch icons offline change "Source" under "Get Game Icons" to "offline"
 # Then run: py main.py --copy_icons --no_main or py main.py and click on Update
 
 # You then might be prompted to run py main.py --appids, do that, and rename the unidentified hashes to their corresponding appid
@@ -247,32 +259,32 @@ def generate_userData_str():
 # the given path is the standard path, if installed for all users
 # The last character doesn't need to be a backslash \
 # Insert the path between the apostrophes
-{USER_DATA_YAML_STRINGS.steam_path}: {steam_path} #default: {steam_path}
+{UserDataYAMLStrings.steam_path}: {steam_path} #default: {steam_path}
 
 
 
 # You can only create a API Key, if you have spent money on Steam (afaik 5€)
-# Create a Steam-Web-API-Key here 
+# Create a Steam-Web-API-Key here
 # http://steamcommunity.com/dev/apikey
 # ----------------------------------------------
 # | NEVER SHARE THIS FILE OR YOUR STEAMAPI KEY |
 # ----------------------------------------------
-{USER_DATA_YAML_STRINGS.api_key}: {api_key}
+{UserDataYAMLStrings.api_key}: {api_key}
 
 
 # To get your profile ID, go into Steam -> Settings
 # The link in the upper left corner has the form of https://steamcommunity.com/profiles/<profile ID>/
 # If you click on that link, it will copy to clipboard, making it easier for you to enter your ID here
 # Again insert it between the apostrophes
-{USER_DATA_YAML_STRINGS.profile_id}: {profile_id}
+{UserDataYAMLStrings.profile_id}: {profile_id}
 
-{USER_DATA_YAML_STRINGS.get_game_icons}:
+{UserDataYAMLStrings.get_game_icons}:
   # When copying icons from Steam/steam/games, ignore these names.
   # This is useful if a hash cannot be automatically identified, but was manually added.
-  {USER_DATA_YAML_STRINGS.hashes_to_ignore}: {hashes_to_ignore}
-  
+  {UserDataYAMLStrings.hashes_to_ignore}: {hashes_to_ignore}
+
   # If True, unknown hashes will not be copied when fetching icons offline.
-  {USER_DATA_YAML_STRINGS.ignore_unkown}: {ignore_unkown_hashes} #default: {ignore_unkown_hashes}
+  {UserDataYAMLStrings.ignore_unkown}: {ignore_unkown_hashes} #default: {ignore_unkown_hashes}
 
   # declares how it fetches the icons:
   # auto:
@@ -281,5 +293,5 @@ def generate_userData_str():
   #   Only fetch icons using the combination of Steam/steam/games and Steam/appcache/appinfo.vdf
   # online:
   #   Always use the Steam Web API
-  {USER_DATA_YAML_STRINGS.source}: {source} # default {source}
+  {UserDataYAMLStrings.source}: {source} # default {source}
 """

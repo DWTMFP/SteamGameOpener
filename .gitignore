@@ -3,3 +3,4 @@ src/Images
 src/*.yaml
 my_configs
 __pycache__
+.git

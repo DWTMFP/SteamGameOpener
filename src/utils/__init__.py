@@ -1,19 +1,23 @@
-from . import yaml_files
-from . import general
-from . import constants
-from . import configs
+from utils.configs import Font as Font
+from utils.configs import MainWindow as MainWindow
+from utils.configs import Scrollbar as Scrollbar
+from utils.constants import IMG_DIR as IMG_DIR
+from utils.constants import SRC_DIR as SRC_DIR
+from utils.constants import STANDARD_CONFIG_PATH as STANDARD_CONFIG_PATH
+from utils.general import Game as Game
+from utils.general import SteamGameManager as SteamGameManager
+from utils.general import get_images as get_images
+from utils.general import get_QScrollBar_style_sheet as get_QScrollBar_style_sheet
+from utils.general import run_exe as run_exe
+from utils.general import validate_iterable as validate_iterable
+from utils.yaml_files import Config as Config
+from utils.yaml_files import UserData as UserData
+from utils.yaml_files import create_config as create_config
+from utils.yaml_files import create_user_data as create_user_data
+from utils.yaml_files import get_config as get_config
+from utils.yaml_files import get_user_data as get_user_data
 
-from utils.yaml_files import (
-    get_config, create_config, get_user_data, create_user_data,
-    Config, UserData, 
-)
-from utils.constants import IMG_DIR, STANDARD_CONFIG_PATH, SRC_DIR
-from utils.configs import (
-    MainWindow as Config_MainWindow,
-    Font as Config_Font,
-    Scrollbar
-)
-from utils.general import(
-    run_exe, get_QScrollBar_style_sheet, get_images, validate_iterable,
-    SteamGameManager, Game
-)
+from . import configs as configs
+from . import constants as constants
+from . import general as general
+from . import yaml_files as yaml_files
