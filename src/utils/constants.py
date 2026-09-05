@@ -134,7 +134,10 @@ class DefaultUserDataValues:
     api_key = ""
     profile_id = ""
 
-    hashes_to_ignore: tuple[str | None] = ("SteamMovie",)
+    steam_games: list = field(default_factory=list)
+    custom_games: list = field(default_factory=list)
+
+    hashes_to_ignore: tuple[str] = ("SteamMovie",)
     ignore_unkown_hashes = False
     source = "auto"
 
@@ -144,6 +147,16 @@ class UserDataYAMLStrings:
     steam_path = "Steam Path"
     api_key = "Steam API Key"
     profile_id = "Steam Profile ID"
+
+    steam_games = "Steam Games"
+    steam_games_name = "Name"
+    steam_games_appid = "AppID"
+    steam_games_exe_path = "Exe Path"
+
+    custom_games = "Custom Games"
+    custom_games_name = "Name"
+    custom_games_exe_path = "Exe Path"
+    custom_games_appid = "AppID"
 
     get_game_icons = "Get Game Icons"
     hashes_to_ignore = "Hashes to Ignore"
@@ -159,33 +172,40 @@ USER_DATA_PYDANTIC_FROM_YAML = {
     UserDataYAMLStrings.hashes_to_ignore: "hashes_to_ignore",
     UserDataYAMLStrings.ignore_unkown: "ignore_unkown",
     UserDataYAMLStrings.source: "source",
+    UserDataYAMLStrings.steam_games: "steam_games",
+    UserDataYAMLStrings.steam_games_name: "name",
+    UserDataYAMLStrings.steam_games_appid: "appid",
+    UserDataYAMLStrings.steam_games_exe_path: "exe_path",
+    UserDataYAMLStrings.custom_games: "custom_games",
+    UserDataYAMLStrings.custom_games_appid: "appid",
+    UserDataYAMLStrings.custom_games_exe_path: "exe_path",
+    UserDataYAMLStrings.custom_games_name: "name",
 }
 
 
 def generate_config_str():
-    window_title = _to_yaml_value(DefaultConfigValues.window_title)
-    window_background = _to_yaml_value(DefaultConfigValues.window_background)
-    window_foreground = _to_yaml_value(DefaultConfigValues.window_foreground)
-    window_x_pos = _to_yaml_value(DefaultConfigValues.window_x_pos)
-    window_y_pos = _to_yaml_value(DefaultConfigValues.window_y_pos)
-    window_widht = _to_yaml_value(DefaultConfigValues.window_widht)
-    window_height = _to_yaml_value(DefaultConfigValues.window_height)
-    window_font_family = _to_yaml_value(DefaultConfigValues.window_font_family)
-    window_font_size = _to_yaml_value(DefaultConfigValues.window_font_size)
-    window_img_size = _to_yaml_value(DefaultConfigValues.window_img_size)
+    default_values = DefaultConfigValues()
+    window_title = _to_yaml_value(default_values.window_title)
+    window_background = _to_yaml_value(default_values.window_background)
+    window_foreground = _to_yaml_value(default_values.window_foreground)
+    window_x_pos = _to_yaml_value(default_values.window_x_pos)
+    window_y_pos = _to_yaml_value(default_values.window_y_pos)
+    window_widht = _to_yaml_value(default_values.window_widht)
+    window_height = _to_yaml_value(default_values.window_height)
+    window_font_family = _to_yaml_value(default_values.window_font_family)
+    window_font_size = _to_yaml_value(default_values.window_font_size)
+    window_img_size = _to_yaml_value(default_values.window_img_size)
 
-    scrollbar_handle_color = _to_yaml_value(DefaultConfigValues.scollbar_handle_color)
-    scrollbar_backgound = _to_yaml_value(DefaultConfigValues.scollbar_background)
-    scrollbar_border_color = _to_yaml_value(DefaultConfigValues.scrollbar_border_color)
+    scrollbar_handle_color = _to_yaml_value(default_values.scollbar_handle_color)
+    scrollbar_backgound = _to_yaml_value(default_values.scollbar_background)
+    scrollbar_border_color = _to_yaml_value(default_values.scrollbar_border_color)
 
-    sort_by_appid = _to_yaml_value(DefaultConfigValues.sort_by_appid)
-    sort_by_custom = _to_yaml_value(DefaultConfigValues.sort_by_custom)
+    sort_by_appid = _to_yaml_value(default_values.sort_by_appid)
+    sort_by_custom = _to_yaml_value(default_values.sort_by_custom)
 
-    excluded_games = _to_yaml_value(DefaultConfigValues.excluded_games, indent=4)
-    show_only_games = _to_yaml_value(DefaultConfigValues.show_only_games, indent=4)
-    hide_steamworks_commmon = _to_yaml_value(
-        DefaultConfigValues.hide_steamworks_commmon
-    )
+    excluded_games = _to_yaml_value(default_values.excluded_games, indent=4)
+    show_only_games = _to_yaml_value(default_values.show_only_games, indent=4)
+    hide_steamworks_commmon = _to_yaml_value(default_values.hide_steamworks_commmon)
 
     default_config = f"""{ConfigYAMLStrings.main_window}:
   {ConfigYAMLStrings.window_title}: {window_title} #default: {window_title}
@@ -238,12 +258,15 @@ def generate_config_str():
 
 
 def generate_user_data_str():
-    steam_path = _to_yaml_value(DefaultUserDataValues.steam_path)
-    api_key = _to_yaml_value(DefaultUserDataValues.api_key)
-    profile_id = _to_yaml_value(DefaultUserDataValues.profile_id)
-    hashes_to_ignore = _to_yaml_value(DefaultUserDataValues.hashes_to_ignore, indent=4)
-    ignore_unkown_hashes = _to_yaml_value(DefaultUserDataValues.ignore_unkown_hashes)
-    source = _to_yaml_value(DefaultUserDataValues.source)
+    default_values = DefaultUserDataValues()
+    steam_path = _to_yaml_value(default_values.steam_path)
+    api_key = _to_yaml_value(default_values.api_key)
+    profile_id = _to_yaml_value(default_values.profile_id)
+    hashes_to_ignore = _to_yaml_value(default_values.hashes_to_ignore, indent=4)
+    ignore_unkown_hashes = _to_yaml_value(default_values.ignore_unkown_hashes)
+    source = _to_yaml_value(default_values.source)
+    custom_games = _to_yaml_value(default_values.custom_games, indent=2)
+    steam_games = _to_yaml_value(default_values.steam_games, indent=2)
 
     return rf"""# The path to the steam installation is necessary, in order to get your games
 
@@ -262,7 +285,6 @@ def generate_user_data_str():
 {UserDataYAMLStrings.steam_path}: {steam_path} #default: {steam_path}
 
 
-
 # You can only create a API Key, if you have spent money on Steam (afaik 5€)
 # Create a Steam-Web-API-Key here
 # http://steamcommunity.com/dev/apikey
@@ -277,6 +299,22 @@ def generate_user_data_str():
 # If you click on that link, it will copy to clipboard, making it easier for you to enter your ID here
 # Again insert it between the apostrophes
 {UserDataYAMLStrings.profile_id}: {profile_id}
+
+# Add the relative Exe Path to a game, for which the Exe is not found automatically
+# either Name or AppID is required; If both are given, the Appid will override the Name
+# Fields:
+# Name: The name of the Game (e. g. "Doki Doki Literature Club")
+# AppID: The appid of the Game (e. g. 698780)
+# Exe Path: The relativ path from Steam/steamapps to the exe (e. g. "Doki Doki Literature Club\\DDLC.exe")
+{UserDataYAMLStrings.steam_games}: {steam_games}
+
+# Set your custom games by adding one to the list
+# Fields:
+# Name: The name of your game (e. g. "Trackmania Nations Forever")
+# Exe Path: The Path to the games Exe (e. g. "C:\\Program Files (x86)\\TmNationsForever\\TmForever.exe")
+# AppID: Your custom AppID; Needs to be negative to not contradict Real Appids; Needed for the Image Identification (e. g. -1)
+{UserDataYAMLStrings.custom_games}: {custom_games}
+
 
 {UserDataYAMLStrings.get_game_icons}:
   # When copying icons from Steam/steam/games, ignore these names.
@@ -294,4 +332,4 @@ def generate_user_data_str():
   # online:
   #   Always use the Steam Web API
   {UserDataYAMLStrings.source}: {source} # default {source}
-"""
+"""  # noqa: S608

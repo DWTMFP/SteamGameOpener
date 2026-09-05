@@ -34,6 +34,11 @@ def convert_yaml_keys(data: dict, key_mapping: dict[str, str]) -> dict:
 
         if isinstance(value, dict):
             value = convert_yaml_keys(value, key_mapping)
+        elif isinstance(value, list):
+            value = [
+                convert_yaml_keys(item, key_mapping) if isinstance(item, dict) else item
+                for item in value
+            ]
 
         data[new_key] = value
 

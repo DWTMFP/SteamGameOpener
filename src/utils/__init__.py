@@ -9,7 +9,6 @@ from utils.general import SteamGameManager as SteamGameManager
 from utils.general import get_images as get_images
 from utils.general import get_QScrollBar_style_sheet as get_QScrollBar_style_sheet
 from utils.general import run_exe as run_exe
-from utils.general import validate_iterable as validate_iterable
 from utils.yaml_files import Config as Config
 from utils.yaml_files import UserData as UserData
 from utils.yaml_files import create_config as create_config

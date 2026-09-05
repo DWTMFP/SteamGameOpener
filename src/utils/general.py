@@ -1,7 +1,6 @@
 import logging
 import os
 import sys
-from collections.abc import Iterable
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,7 +10,7 @@ from PIL import Image
 
 from steam_appinfo_parser.parse_appinfo import iter_apps
 
-from .configs import ScrollbarColor, UserData
+from .configs import ScrollbarColor, SteamGame, UserData
 from .constants import GAMES_PATH, IMG_DIR, USER_DATA_PATH
 
 logger = logging.getLogger()
@@ -25,6 +24,7 @@ class Game:
     appid: int
     name: str
     install_dir: str
+    exe_path: str | None = None
 
 
 class SteamGameManager:
@@ -32,28 +32,41 @@ class SteamGameManager:
         game_by_appid: dict[int, Game] = {}
         game_by_name: dict[str, Game] = {}
 
-        for file in Path(user_data.steam_path, "steamapps").glob("appmanifest_*"):
-            appid = int(file.stem.removeprefix("appmanifest_"))
+        steam_games = user_data.steam_games
 
-            with Path(file).open(encoding="utf8") as f:
-                text = f.read().replace('"', "").replace("\t", "").split("\n")
+        # Get games from appmanifest files
+        for file in Path(user_data.steam_path, "steamapps").glob("appmanifest_*.acf"):
+            # Get Appid
+            try:
+                appid = int(file.stem.removeprefix("appmanifest_"))
+            except ValueError:
+                msg = f'Tried to convert "{file.stem.removeprefix("appmanifest_")}" to an integer. Failed.'
+                logger.exception(msg)
+                continue
 
-            game_name = ""
-            install_dir = ""
-            for line in text:
-                if line.startswith("name"):
-                    game_name = line.removeprefix("name")
+            # Get Games from appmanifest files
+            with file.open(encoding="utf8") as f:
+                file_data = f.read().replace('"', "").replace("\t", "").split("\n")
 
-                elif line.startswith("installdir"):
-                    install_dir = line.removeprefix("installdir")
-
-                if game_name and install_dir:
-                    break
-
-            game = Game(appid, game_name, install_dir)
-
+            game = self.__build_game_from_appmanifest(appid, file_data, steam_games)
             game_by_appid[appid] = game
-            game_by_name[game_name] = game
+            game_by_name[game.name] = game
+
+        # Get games from user data file
+        if user_data.custom_games:
+            for custom_game in user_data.custom_games:
+                appid = custom_game.appid
+                game_name = custom_game.name
+
+                game = Game(
+                    name=game_name,
+                    appid=appid,
+                    install_dir="",
+                    exe_path=custom_game.exe_path,
+                )
+
+                game_by_appid[appid] = game
+                game_by_name[game_name] = game
 
         self.__game_by_appid = game_by_appid
         self.__game_by_name = game_by_name
@@ -62,6 +75,84 @@ class SteamGameManager:
 
         self.user_data = user_data
         self.__update_listed_games()
+
+        self.__check_conflicting_name_and_appid(steam_games)
+
+    def __check_conflicting_name_and_appid(self, steam_games: list[SteamGame] | None):
+        if not steam_games:
+            return
+
+        for steam_game in steam_games:
+            if not (steam_game.appid and steam_game.name):
+                continue
+            # Check if A) AppID exists and B) if the gotten name and the actual name are matching
+            try:
+                real_name = self.get_game_name(steam_game.appid)
+                if steam_game.name != real_name:
+                    logger.warning(
+                        f"The name and AppID under user data / Steam Games "
+                        f"don't match for the following entry: "
+                        f'Name: "{steam_game.name}" AppID: "{steam_game.appid}"'
+                    )
+            except KeyError:
+                logger.warning(
+                    f"AppID {steam_game.appid} not found. Please check, if it was correct under user data / Steam Games."
+                )
+
+            # check if A) name exists and B) if the gotten AppId and the actual AppId are matching
+            try:
+                real_appid = self.get_appid(steam_game.name)
+                if real_appid != steam_game.appid:
+                    logger.warning(
+                        f"The name and AppID under user data / Steam Games "
+                        f"don't match for the following entry: "
+                        f'Name: "{steam_game.name}" AppID: "{steam_game.appid}"'
+                    )
+            except KeyError:
+                logger.warning(
+                    f"Steam Game {steam_game.name} not found. Please check, if it was correct under user data / Steam Games."
+                )
+
+    def __build_game_from_appmanifest(
+        self, appid: int, file_data: list[str], steam_games: list[SteamGame] | None
+    ) -> Game:
+        # get game_name and install_dir
+        game_name = ""
+        install_dir = ""
+        for line in file_data:
+            if line.startswith("name"):
+                game_name = line.removeprefix("name")
+
+            elif line.startswith("installdir"):
+                install_dir = line.removeprefix("installdir")
+
+            if game_name and install_dir:
+                break
+
+        return Game(
+            appid,
+            game_name,
+            install_dir,
+            self.__get_exe_path(appid, game_name, steam_games),
+        )
+
+    def __get_exe_path(
+        self, appid: int, game_name: str, steam_games: list[SteamGame] | None
+    ) -> str | None:
+        # == Actual Function start ==
+        if steam_games is None:
+            return None
+
+        # First try to find by AppID
+        for steam_game in steam_games:
+            if steam_game.appid == appid:
+                return steam_game.exe_path
+
+        # Matching name as Fallback
+        for steam_game in steam_games:
+            if steam_game.name == game_name:
+                return steam_game.exe_path
+        return None
 
     def __update_listed_games(self):
         """Does NOT edit the txt file, it reads it again, to get new games to display"""
@@ -75,7 +166,6 @@ class SteamGameManager:
             appid = self.get_appid(game_name)
             install_dir = self.get_install_dir(game_name=game_name)
             games.append(Game(appid, game_name, install_dir))
-        self.__listed_games_original_order = deepcopy(games)
         self.__listed_games = deepcopy(games)
 
     def get_listed_games(self) -> list[Game]:
@@ -126,9 +216,14 @@ class SteamGameManager:
         with Path(GAMES_PATH).open(encoding="utf8") as f:
             text = f.read().split("\n")
 
+        # set it here to preserve empty lines and comments starting with a "#"
+        self.__listed_games_original_order = text
+
         games = []
         for line in text:
-            if not line.strip():
+            stripped_line = line.strip()
+            # Skip line, if empty or starts with a "#" (comment)
+            if not stripped_line or stripped_line.startswith("#"):
                 continue
             games.append(line)
         return games
@@ -138,18 +233,17 @@ class SteamGameManager:
         s = ""
         # split old and new games to not change the order of old games and add the new ones on the bottom
         all_games: list[str] = self.__discovered_game_names
-        current_games: list[Game] = self.__listed_games_original_order
-        current_game_names = [game.name for game in current_games]
+        current_games: list[str] = self.__listed_games_original_order
 
         games_to_add = [
-            game for game in all_games if game not in current_game_names
+            game for game in all_games if game not in current_games
         ]  # [games] - [old_games]
 
         if games_to_add == []:
             logger.info("No new games found, not overwriting text file.")
             return
 
-        s = "\n".join(current_game_names)
+        s = "\n".join(current_games)
         s += "\n"
         s += "\n".join(games_to_add)
         s = s.strip()  # no trailing newline
@@ -230,6 +324,7 @@ def download_images(user_data: UserData):
 
 
 def run_exe(path: Path):
+    logger.info(f"Running {str(path)}")
     os.startfile(path)
     sys.exit()
 
@@ -344,9 +439,7 @@ def copy_icons(user_data: UserData):
     IMG_DIR.mkdir(parents=True, exist_ok=True)
 
     # hashes to ignore can be None, validate_list doesn't acceppt None, but might return it
-    hashes_to_ignore = (
-        validate_iterable(user_data.get_game_icons.hashes_to_ignore) or set()
-    )
+    hashes_to_ignore = user_data.get_game_icons.hashes_to_ignore
 
     # Try identifying via appinfo.vdf
     for icon_hash in existing_hashes:
@@ -421,14 +514,3 @@ def get_images(user_data: UserData):
             download_images(user_data)
         else:
             copy_icons(user_data)
-
-
-def validate_iterable[T](values: Iterable[T | None]) -> set[T] | None:
-    r"""
-    Return a set without the ``None`` values or ``None`` if there are no valid Entrys.
-
-    :param Iterable[T | None] l: List to be validated
-    :return Iterable[T] | None: None if list is empty after removing ``None`` entrys, else set[T]
-    """
-    values = {value for value in values if value is not None}
-    return values or None

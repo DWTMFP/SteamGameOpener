@@ -25,6 +25,7 @@ from utils import (
     IMG_DIR,
     STANDARD_CONFIG_PATH,
     Config,
+    Game,
     Scrollbar,
     SteamGameManager,
     UserData,
@@ -35,7 +36,6 @@ from utils import (
     get_QScrollBar_style_sheet,
     get_user_data,
     run_exe,
-    validate_iterable,
 )
 from utils import Font as Config_Font
 from utils import MainWindow as Config_MainWindow
@@ -120,8 +120,8 @@ class MainWindow(QMainWindow):
         games_to_exclude = config.games.exclude
         if config.games.hide_steamworks_common_redistributables:
             games_to_exclude.append("Steamworks Common Redistributables")
-        self.games_to_exclude = validate_iterable(games_to_exclude)
-        self.only_these_games = validate_iterable(config.games.only_show)
+        self.games_to_exclude = games_to_exclude
+        self.only_these_games = config.games.only_show
 
         # ============
         # == Layout ==
@@ -154,7 +154,7 @@ class MainWindow(QMainWindow):
         run_game_btn = QPushButton("Run Game")
         run_game_btn.clicked.connect(self.on_run_game)
 
-        self.via_exe = False
+        self.via_weburl = True
         self.via_exe_btn = QPushButton("Via Weburl")
         self.via_exe_btn.clicked.connect(self.on_via_exe_btn)
 
@@ -250,56 +250,83 @@ class MainWindow(QMainWindow):
         current_item = self.games_widget.currentItem()
         if current_item is None:
             return
-        game_name = current_item.text()
-        if self.via_exe:
-            game = self.steam_data.get_game(game_name=game_name)
-
-            if game.appid >= 0:
-                install_dir = (
-                    Path(self.user_data.steam_path)
-                    / "steamapps"
-                    / "common"
-                    / game.install_dir
-                )
+        game = self.steam_data.get_game(game_name=current_item.text())
+        if self.via_weburl:
+            appid = game.appid
+            if appid < 0:
+                self.__via_exe(game)
+            # DO NOT REMOVE ELSE, OTHERWISE sys.exit() BREAKS EXE_SELECTION
             else:
-                install_dir = Path(game.install_dir)
-
-            if not install_dir.is_dir():
-                logger.warning(
-                    f"The supposed install dir of {install_dir} from game: {game.name} is not a directory."
+                self.run_weburl(
+                    rf"steam://rungameid/{self.steam_data.get_appid(game.name)}"
                 )
-
-            exe_to_try = install_dir / (game.name + ".exe")
-            logger.info(f"Checking if {exe_to_try} exists")
-            if exe_to_try in install_dir.glob("*.exe"):
-                run_exe(exe_to_try)
-
-            # Now install_dir is a valid directory, without game_name.exe, so check for other exe in that dir, with subdirs
-            logger.info(
-                "Doesn't exist. Now searching for exes in Path, and trying similiar one"
-            )
-            all_exes_iterator = set(install_dir.rglob("*.exe", case_sensitive=False))
-            for exe in all_exes_iterator:
-                if self.normalize_exe(exe.stem) == self.normalize_exe(game.name):
-                    logger.info(f"Found {exe}.")
-                    run_exe(exe)
-
-            # Didn't work either
-            logger.info("Giving up to autodetect, now choose yourself.")
-            self.exe_chooser = ChooseExe(
-                self.config.scrollbar,
-                self.config.main_window.font,
-                self.games_widget.currentItem(),
-                self.games_widget.iconSize(),
-                all_exes_iterator,
-            )
-            self.exe_chooser.show()
 
         else:
-            webbrowser.open(
-                rf"steam://rungameid/{self.steam_data.get_appid(game_name)}"
+            self.__via_exe(game)
+
+    def run_weburl(self, weburl: str):
+        logger.info(f'Running "{weburl}"')
+        webbrowser.open(weburl)
+        sys.exit()
+
+    def __via_exe(self, game: Game):
+        game = self.steam_data.get_game(game_name=game.name)
+        steam_path = Path(self.user_data.steam_path)
+        steamapps_common_path = steam_path / "steamapps" / "common"
+
+        if game.appid >= 0:
+            install_dir = steamapps_common_path / game.install_dir
+        # keep that for legacy reasons
+        else:
+            install_dir = Path(game.install_dir)
+
+        if game.exe_path is not None:
+            logger.info(f"Found Exe Path specified. Working with {game.exe_path}")
+            exe_path = Path(game.exe_path)
+            if exe_path.is_absolute() and exe_path.exists():
+                run_exe(exe_path)
+            else:
+                new_exe_path = steamapps_common_path / exe_path
+                logger.info(
+                    f'"{str(exe_path)}" was not found, now trying "{str(new_exe_path)}"'
+                )
+                if new_exe_path.exists():
+                    run_exe(new_exe_path)
+                logger.info(
+                    "Also not found. Some Configuration was not setup correctly, defaulting to normal search."
+                )
+
+        if not install_dir.is_dir():
+            logger.warning(
+                f"The supposed install dir of {install_dir} from game: {game.name} is not a directory."
             )
-            sys.exit()
+            return
+
+        exe_to_try = install_dir / (game.name + ".exe")
+        logger.info(f'Checking if "{exe_to_try}" exists')
+        if exe_to_try in install_dir.glob("*.exe"):
+            run_exe(exe_to_try)
+
+        # Now install_dir is a valid directory, without game_name.exe, so check for other exe in that dir, with subdirs
+        logger.info(
+            "Doesn't exist. Now searching for exes in Path, and trying similiar one"
+        )
+        all_exes_iterator = set(install_dir.rglob("*.exe", case_sensitive=False))
+        for exe in all_exes_iterator:
+            if self.normalize_exe(exe.stem) == self.normalize_exe(game.name):
+                run_exe(exe)
+
+        # Didn't work either
+        logger.info("Giving up to autodetect, now choose yourself.")
+
+        self.exe_chooser = ChooseExe(
+            self.config.scrollbar,
+            self.config.main_window.font,
+            self.games_widget.currentItem(),
+            self.games_widget.iconSize(),
+            all_exes_iterator,
+        )
+        self.exe_chooser.show()
 
     def normalize_exe(self, s: str) -> str:
         return s.lower().replace(" ", "").replace("_", "")
@@ -314,7 +341,7 @@ class MainWindow(QMainWindow):
             self.via_exe_btn.setText("Via Exe")
         else:
             self.via_exe_btn.setText("Via Weburl")
-        self.via_exe = not self.via_exe
+        self.via_weburl = not self.via_weburl
 
 
 class GameAppidGUI(QMainWindow):
