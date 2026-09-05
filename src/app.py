@@ -84,9 +84,6 @@ class ChooseExe(QWidget):
             QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents
         )
         exe_selection.setFont(QFont(font.family, font.size))
-        exe_selection.setHorizontalScrollBarPolicy(
-            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-        )
 
         # == Add Exes ==
         for exe in exes:

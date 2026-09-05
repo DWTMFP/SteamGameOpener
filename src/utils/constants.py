@@ -134,7 +134,7 @@ class DefaultUserDataValues:
     api_key = ""
     profile_id = ""
 
-    hashes_to_ignore: tuple[str | None] = ("SteamMovies",)
+    hashes_to_ignore: tuple[str | None] = ("SteamMovie",)
     ignore_unkown_hashes = False
     source = "auto"
 
