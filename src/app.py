@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QFont, QIcon
+from PySide6.QtGui import QFont, QPalette
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QAbstractScrollArea,
@@ -22,7 +22,6 @@ from PySide6.QtWidgets import (
 )
 
 from utils import (
-    IMG_DIR,
     STANDARD_CONFIG_PATH,
     Config,
     Game,
@@ -32,6 +31,7 @@ from utils import (
     create_config,
     create_user_data,
     get_config,
+    get_icon_from_appid,
     get_images,
     get_QScrollBar_style_sheet,
     get_user_data,
@@ -172,9 +172,10 @@ class MainWindow(QMainWindow):
         self.games_widget.setSelectionMode(
             QAbstractItemView.SelectionMode.SingleSelection
         )
-        self.games_widget.setStyleSheet(
-            get_QScrollBar_style_sheet(config.scrollbar.color)
-        )
+        if not config.scrollbar.custom_scrollbar:
+            self.games_widget.setStyleSheet(
+                get_QScrollBar_style_sheet(config.scrollbar.color)
+            )
         if self.img_size is not None:
             self.games_widget.setIconSize(QSize(self.img_size, self.img_size))
         self.games_widget.setSizeAdjustPolicy(
@@ -186,6 +187,10 @@ class MainWindow(QMainWindow):
         self.games_widget.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
         )
+        if config.scrollbar.scrollbar_off:
+            self.games_widget.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            )
 
         main_layout.addLayout(button_layout)
         main_layout.addWidget(self.games_widget, stretch=1)
@@ -215,7 +220,11 @@ class MainWindow(QMainWindow):
         only_these_games = self.only_these_games
         exclude_these_games = self.games_to_exclude
 
-        for game in self.steam_data.get_listed_games():
+        listed_games = self.steam_data.get_listed_games()
+        if self.sort_by.appid:
+            listed_games.sort(key=lambda game: game.appid)
+
+        for game in listed_games:
             game_name = game.name
             appid = game.appid
 
@@ -229,11 +238,10 @@ class MainWindow(QMainWindow):
             ):
                 continue
 
-            img_name = str(appid) + ".jpg"
-            img_path = IMG_DIR / img_name
+            icon = get_icon_from_appid(appid)
 
-            if img_path.exists():
-                item = QListWidgetItem(QIcon(str(img_path)), game_name)
+            if icon is not None:
+                item = QListWidgetItem(icon, game_name)
             else:
                 item = QListWidgetItem(game_name)
 
@@ -254,7 +262,7 @@ class MainWindow(QMainWindow):
         if self.via_weburl:
             appid = game.appid
             if appid < 0:
-                self.__via_exe(game)
+                self.run_game_via_exe(game)
             # DO NOT REMOVE ELSE, OTHERWISE sys.exit() BREAKS EXE_SELECTION
             else:
                 self.run_weburl(
@@ -262,14 +270,14 @@ class MainWindow(QMainWindow):
                 )
 
         else:
-            self.__via_exe(game)
+            self.run_game_via_exe(game)
 
     def run_weburl(self, weburl: str):
         logger.info(f'Running "{weburl}"')
         webbrowser.open(weburl)
         sys.exit()
 
-    def __via_exe(self, game: Game):
+    def run_game_via_exe(self, game: Game):
         game = self.steam_data.get_game(game_name=game.name)
         steam_path = Path(self.user_data.steam_path)
         steamapps_common_path = steam_path / "steamapps" / "common"
@@ -364,18 +372,27 @@ class GameAppidGUI(QMainWindow):
         )
         list_widget.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
-        for game in self.steam_manager.get_all_games():
+        items_with_image: list[QListWidgetItem] = []
+        items_without_image: list[QListWidgetItem] = []
+        all_games = self.steam_manager.get_all_games()
+        for game in sorted(all_games, key=lambda game: game.appid):
             display_str = f"{game.name}: {game.appid}"
             print(display_str)
-            img_name = str(game.appid) + ".jpg"
-            img_path = IMG_DIR / img_name
 
-            if img_path.exists():
-                item = QListWidgetItem(QIcon(str(img_path)), display_str)
+            icon = get_icon_from_appid(game.appid)
+
+            if icon is not None:
+                item = QListWidgetItem(icon, display_str)
+                items_with_image.append(item)
             else:
                 item = QListWidgetItem(display_str)
+                items_without_image.append(item)
 
             item.setData(Qt.ItemDataRole.UserRole, game.appid)
+
+        for item in items_without_image:
+            list_widget.addItem(item)
+        for item in items_with_image:
             list_widget.addItem(item)
 
         list_widget.itemClicked.connect(self.copy_appid_to_clipboard)
@@ -393,12 +410,26 @@ class GameAppidGUI(QMainWindow):
 def set_app_config(app: QApplication, main_window: Config_MainWindow):
     app.setFont(QFont(main_window.font.family, main_window.font.size))
 
-    app.setStyleSheet(f"""
-    QWidget {{
-        background-color: {main_window.background};
-        color: {main_window.foreground};
-    }}
-""")
+    palette = app.palette()
+
+    # set background color
+    for role in (
+        QPalette.ColorRole.Window,
+        QPalette.ColorRole.Base,
+        QPalette.ColorRole.Button,
+        QPalette.ColorRole.Highlight,
+    ):
+        palette.setColor(role, main_window.background)
+
+    # set foreground color
+    for role in (
+        QPalette.ColorRole.WindowText,
+        QPalette.ColorRole.Text,
+        QPalette.ColorRole.ButtonText,
+    ):
+        palette.setColor(role, main_window.foreground)
+
+    app.setPalette(palette)
 
 
 def display_game_appid(config_path: Path):

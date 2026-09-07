@@ -1,12 +1,12 @@
 import logging
 import os
 import sys
-from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 
 import requests
 from PIL import Image
+from PySide6.QtGui import QIcon
 
 from steam_appinfo_parser.parse_appinfo import iter_apps
 
@@ -157,7 +157,7 @@ class SteamGameManager:
     def __update_listed_games(self):
         """Does NOT edit the txt file, it reads it again, to get new games to display"""
         game_names = self.__get_games_from_txt()
-        games = []
+        games: list[Game] = []
 
         for game_name in game_names:
             if game_name not in self.__game_by_name:
@@ -166,7 +166,7 @@ class SteamGameManager:
             appid = self.get_appid(game_name)
             install_dir = self.get_install_dir(game_name=game_name)
             games.append(Game(appid, game_name, install_dir))
-        self.__listed_games = deepcopy(games)
+        self.__listed_games = games
 
     def get_listed_games(self) -> list[Game]:
         return self.__listed_games
@@ -214,10 +214,12 @@ class SteamGameManager:
         if not GAMES_PATH.exists():
             return []
         with Path(GAMES_PATH).open(encoding="utf8") as f:
-            text = f.read().split("\n")
+            text = f.read()
 
         # set it here to preserve empty lines and comments starting with a "#"
-        self.__listed_games_original_order = text
+        self.__original_text_file = text
+
+        text = text.split("\n")
 
         games = []
         for line in text:
@@ -233,7 +235,7 @@ class SteamGameManager:
         s = ""
         # split old and new games to not change the order of old games and add the new ones on the bottom
         all_games: list[str] = self.__discovered_game_names
-        current_games: list[str] = self.__listed_games_original_order
+        current_games: list[str] = [game.name for game in self.__listed_games]
 
         games_to_add = [
             game for game in all_games if game not in current_games
@@ -243,7 +245,7 @@ class SteamGameManager:
             logger.info("No new games found, not overwriting text file.")
             return
 
-        s = "\n".join(current_games)
+        s = self.__original_text_file
         s += "\n"
         s += "\n".join(games_to_add)
         s = s.strip()  # no trailing newline
@@ -381,7 +383,16 @@ QScrollBar::sub-page:horizontal {{
 """
 
 
-def _get_appid_by_hash(path: Path) -> dict[str, int]:
+def _get_appid_by_hash(path: Path) -> dict[str, int] | None:
+    """
+    Get a dictionary for looking up the appid, with the hash as an input
+
+    :param Path path: The path to the appinfo.vdf file
+    :returns dict[str, int] | None: Returns ``None`` if the appinfo.vdf file is not existent, otherwise return the dictionary for appid lookup.
+    """
+    if not path.exists():
+        return None
+
     data = path.read_bytes()
     appid_by_hash = {}
 
@@ -408,9 +419,11 @@ def _copy_icon_to_image_folder(icon_hash: str, appid: int | None, steam_icon_dir
         logger.warning(f"Icon not found: {source_path}")
         return
 
-    destination_path = IMG_DIR / (new_name + ".jpg")
-    if destination_path.exists():
-        return
+    destination_path = IMG_DIR / (new_name + ".jpeg")
+    # For also supporting .png files
+    for img_format in (".jpg", ".png"):
+        if destination_path.with_suffix(img_format).exists():
+            return
 
     with Image.open(source_path) as image:
         image.convert("RGB").save(destination_path, "JPEG")
@@ -430,13 +443,15 @@ def copy_icons(user_data: UserData):
 
     appinfo_path = steam_path / "appcache" / "appinfo.vdf"
     appid_by_hash = _get_appid_by_hash(appinfo_path)
+    if appid_by_hash is None:
+        logger.warning(
+            "The Path to ``appinfo.vdf`` does not exist. Please open Steam to create that file."
+        )
+        return
     steam_icon_dir = steam_path / "steam" / "games"
     not_identified_icons = set()
 
     existing_hashes = _get_existing_hashes(steam_icon_dir)
-
-    # Create IMG_DIR if it doesn't exist yet
-    IMG_DIR.mkdir(parents=True, exist_ok=True)
 
     # hashes to ignore can be None, validate_list doesn't acceppt None, but might return it
     hashes_to_ignore = user_data.get_game_icons.hashes_to_ignore
@@ -485,6 +500,13 @@ def copy_icons(user_data: UserData):
     #         not_identified_icons.discard(icon_hash)
     #         break
 
+    ignore_unokwn_hashes = user_data.get_game_icons.ignore_unkown_hashes
+
+    if ignore_unokwn_hashes:
+        for icon_hash in not_identified_icons:
+            img_path = IMG_DIR / f"{icon_hash}.jpg"
+            img_path.unlink(missing_ok=True)
+
     if not_identified_icons:
         # DO NOT REMOVE THE SPACES, THEY ALIGN THE NEWLINES WITH THE TEXT AFTER "Warning: "
         logging_str = (
@@ -499,6 +521,8 @@ def copy_icons(user_data: UserData):
 def get_images(user_data: UserData):
     """Fetch the images with the specified method"""
     source = user_data.get_game_icons.source
+    # Create IMG_DIR if it doesn't exist yet
+    IMG_DIR.mkdir(parents=True, exist_ok=True)
     if source == "online":
         if user_data.profile_id and user_data.api_key:
             download_images(user_data)
@@ -514,3 +538,12 @@ def get_images(user_data: UserData):
             download_images(user_data)
         else:
             copy_icons(user_data)
+
+
+def get_icon_from_appid(appid: int) -> QIcon | None:
+    for img_format in (".png", ".jpg", ".jpeg"):
+        img_name = str(appid) + img_format
+        img_path = IMG_DIR / img_name
+        if img_path.exists():
+            return QIcon(str(img_path))
+    return None

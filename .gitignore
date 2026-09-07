@@ -1,6 +1,10 @@
-src/games.txt
-src/Images
-src/*.yaml
-my_configs
-__pycache__
 .git
+__pycache__
+my_configs
+
+src/games.txt
+src/Images/*
+!src/Images/music_icon.png
+
+src/*.yaml
+src/test.py

@@ -6,12 +6,9 @@ from pydantic import ValidationError
 
 from .configs import Config, UserData
 from .constants import (
-    CONFIG_PYDANTIC_FROM_YAML,
     STANDARD_CONFIG_PATH,
     USER_DATA_PATH,
-    USER_DATA_PYDANTIC_FROM_YAML,
     DefaultSteamPath_str,
-    UserDataYAMLStrings,
     generate_config_str,
     generate_user_data_str,
 )
@@ -71,7 +68,7 @@ def get_config(config_path: Path) -> Config:
         return Config()
 
     try:
-        return Config(**convert_yaml_keys(data, CONFIG_PYDANTIC_FROM_YAML))
+        return Config(**data)
     except ValidationError as e:
         logger.warning("Invalid config: %s", e)
         logger.info("Using default values.")
@@ -100,16 +97,16 @@ def get_user_data() -> UserData:
         logger.info("Using default values.")
         return UserData()
 
-    steam_path = Path(data[UserDataYAMLStrings.steam_path])
+    steam_path = Path(DefaultSteamPath_str)
     if not steam_path.exists():
         logger.warning(f"Invalid Steam Path, now using {DefaultSteamPath_str}")
         steam_path = Path(DefaultSteamPath_str)
 
     if not steam_path.exists():
         raise FileNotFoundError("Path to Steam was not found.")
-
+    print(data)
     try:
-        user_data = UserData(**convert_yaml_keys(data, USER_DATA_PYDANTIC_FROM_YAML))
+        user_data = UserData(**data)
     except ValidationError as e:
         logger.warning("Invalid config: %s", e)
         logger.info("Using default values.")

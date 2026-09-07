@@ -1,6 +1,9 @@
-from collections.abc import Iterable
-from dataclasses import dataclass, field
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
+
+from pydantic import Field
 
 # Paths and directories
 SRC_DIR = (
@@ -41,233 +44,178 @@ def _to_yaml_value(
 
 
 @dataclass(frozen=True)
-class DefaultConfigValues:
-    window_title = "Steam Games"
-    window_background = "black"
-    window_foreground = "white"
-    window_x_pos = None
-    window_y_pos = None
-    window_widht = None
-    window_height = None
-    window_font_family = "Arial"
-    window_font_size = 20
-    window_img_size = 31
+class YAMLValue:
+    yaml_key: str
+    default: Any = None
+    default_factory: Callable[[], Any] | None = None
 
-    scollbar_handle_color = "grey"
-    scollbar_background = "lightgrey"
-    scrollbar_border_color = "solid black"
+    def get_default(self) -> Any:
+        if self.default_factory is not None:
+            return self.default_factory()
 
-    sort_by_appid = False
-    sort_by_custom = True
+        return self.default
 
-    excluded_games: list = field(default_factory=list)
-    show_only_games: list = field(default_factory=list)
-    hide_steamworks_commmon = True
+    def yaml_default(self, *, indent: int | None = None) -> str:
+        return _to_yaml_value(self.get_default(), indent=indent)
 
+    def to_yaml_line(
+        self,
+        space_after_colon: int = 1,
+        space_before_default: int = 1,
+        with_default: bool = True,  # noqa: FBT001, FBT002
+        *,
+        indent: int | None = None,
+    ):
+        value = self.yaml_default(indent=indent)
+        separator_after_colon = " " * space_after_colon
+        default_separator = " " * space_before_default
 
-@dataclass(frozen=True)
-class ConfigYAMLStrings:
-    main_window = "Main Window"
-    window_title = "title"
-    window_background = "background"
-    window_foreground = "foreground"
-    window_pos = "Position"
-    window_x_pos = "x"
-    window_y_pos = "y"
-    window_size = "Size"
-    window_width = "width"
-    window_height = "height"
-    window_font = "Font"
-    font_family = "family"
-    font_size = "size"
-    img_size = "Image size"
+        line = f"{self.yaml_key}:{separator_after_colon}{value}"
 
-    scrollbar = "Scrollbar"
-    scrollbar_color = "color"
-    scrollbar_color_background = "background"
-    scrollbar_color_handle = "handle"
-    scrollbar_color_border = "border"
+        if with_default:
+            line += f"{default_separator}#default: {value}"
 
-    sort_by = "Sort By"
-    sort_by_appid = "Appid"
-    sort_by_custom = "Custom Order"
+        return line
 
-    games = "Games"
-    games_exlude = "exlude"
-    games_show_only = "only show"
-    games_hide_steamworks = "Hide SteamworksCommon Redistributable"
+    def pydantic_field(self):
+        if self.default_factory is not None:
+            return Field(
+                default_factory=self.default_factory,
+                alias=self.yaml_key,
+            )
+        if self.default is not None:
+            return Field(
+                default=self.default,
+                alias=self.yaml_key,
+            )
+        return Field(alias=self.yaml_key)
 
 
-CONFIG_PYDANTIC_FROM_YAML = {
-    ConfigYAMLStrings.main_window: "main_window",
-    ConfigYAMLStrings.window_title: "title",
-    ConfigYAMLStrings.window_background: "background",
-    ConfigYAMLStrings.window_foreground: "foreground",
-    ConfigYAMLStrings.window_pos: "position",
-    ConfigYAMLStrings.window_x_pos: "x",
-    ConfigYAMLStrings.window_y_pos: "y",
-    ConfigYAMLStrings.window_size: "window_size",
-    ConfigYAMLStrings.window_width: "width",
-    ConfigYAMLStrings.window_height: "height",
-    ConfigYAMLStrings.window_font: "font",
-    ConfigYAMLStrings.font_family: "family",
-    ConfigYAMLStrings.font_size: "font_size",
-    ConfigYAMLStrings.img_size: "size_of_images",
-    ConfigYAMLStrings.scrollbar: "scrollbar",
-    ConfigYAMLStrings.scrollbar_color: "color",
-    ConfigYAMLStrings.scrollbar_color_background: "background",
-    ConfigYAMLStrings.scrollbar_color_handle: "handle",
-    ConfigYAMLStrings.scrollbar_color_border: "border",
-    ConfigYAMLStrings.sort_by: "sort_by",
-    ConfigYAMLStrings.sort_by_appid: "appid",
-    ConfigYAMLStrings.sort_by_custom: "custom",
-    ConfigYAMLStrings.games: "games",
-    ConfigYAMLStrings.games_exlude: "exclude",
-    ConfigYAMLStrings.games_show_only: "only_show",
-    ConfigYAMLStrings.games_hide_steamworks: "hide_steamworks_common_redistributables",
-}
+class ConfigValues:
+    # Main Window
+    main_window = YAMLValue("Main Window")
+    window_title = YAMLValue(yaml_key="Title", default="Steam Games")
+    window_background = YAMLValue(yaml_key="Background", default="black")
+    window_foreground = YAMLValue(yaml_key="Foreground", default="white")
+
+    window_position = YAMLValue("Position")
+    window_x_pos = YAMLValue(yaml_key="x", default=None)
+    window_y_pos = YAMLValue(yaml_key="y", default=None)
+
+    window_size = YAMLValue("Size")
+    window_width = YAMLValue(yaml_key="Width", default=None)
+    window_height = YAMLValue(yaml_key="Height", default=None)
+
+    window_font = YAMLValue("Font")
+    font_family = YAMLValue(yaml_key="Family", default="Arial")
+    font_size = YAMLValue(yaml_key="Size", default=20)
+
+    window_img_size = YAMLValue(yaml_key="Image size", default=31)
+
+    # Scrollbar
+    scrollbar = YAMLValue("Scrollbar")
+    scrollbar_off = YAMLValue(yaml_key="Deactivate Scrollbar", default=False)
+    scrollbar_custom = YAMLValue(yaml_key="Custom Scrollbar", default=False)
+
+    scrollbar_color = YAMLValue("Color")
+    scrollbar_color_background = YAMLValue(yaml_key="Background", default="lightgrey")
+    scrollbar_color_handle = YAMLValue(yaml_key="Handle", default="grey")
+    scrollbar_color_border = YAMLValue(yaml_key="Border", default="solid black")
+
+    # Sorting
+    sort_by = YAMLValue("Sort By")
+    sort_by_appid = YAMLValue(yaml_key="Appid", default=False)
+    sort_by_custom = YAMLValue(yaml_key="Custom Order", default=True)
+
+    # Games
+    games = YAMLValue("Games")
+    games_exclude = YAMLValue(yaml_key="Exclude", default_factory=list)
+    games_show_only = YAMLValue(yaml_key="Only show", default_factory=list)
+    games_hide_steamworks = YAMLValue(
+        yaml_key="Hide SteamworksCommon Redistributable", default=True
+    )
 
 
-@dataclass(frozen=True)
-class DefaultUserDataValues:
-    steam_path = DefaultSteamPath_str.replace("\\", "\\\\")  # double \ is needed
-    api_key = ""
-    profile_id = ""
+class UserDataValues:
+    steam_path = YAMLValue(
+        yaml_key="Steam Path", default=DefaultSteamPath_str.replace("\\", "\\\\")
+    )
+    api_key = YAMLValue(yaml_key="Steam API Key", default="")
+    profile_id = YAMLValue(yaml_key="Steam Profile ID", default="")
 
-    steam_games: list = field(default_factory=list)
-    custom_games: list = field(default_factory=list)
+    steam_games = YAMLValue(yaml_key="Steam Games", default_factory=list)
+    steam_games_name = YAMLValue("Name", default=None)
+    steam_games_appid = YAMLValue("AppID", default=None)
+    steam_games_exe_path = YAMLValue("Exe Path")
 
-    hashes_to_ignore: tuple[str] = ("SteamMovie",)
-    ignore_unkown_hashes = False
-    source = "auto"
+    custom_games = YAMLValue(yaml_key="Custom Games", default_factory=list)
+    custom_games_name = YAMLValue("Name")
+    custom_games_exe_path = YAMLValue("Exe Path")
+    custom_games_appid = YAMLValue("AppID")
 
-
-@dataclass(frozen=True)
-class UserDataYAMLStrings:
-    steam_path = "Steam Path"
-    api_key = "Steam API Key"
-    profile_id = "Steam Profile ID"
-
-    steam_games = "Steam Games"
-    steam_games_name = "Name"
-    steam_games_appid = "AppID"
-    steam_games_exe_path = "Exe Path"
-
-    custom_games = "Custom Games"
-    custom_games_name = "Name"
-    custom_games_exe_path = "Exe Path"
-    custom_games_appid = "AppID"
-
-    get_game_icons = "Get Game Icons"
-    hashes_to_ignore = "Hashes to Ignore"
-    ignore_unkown = "Ignore unkown Hashes"
-    source = "Source"
-
-
-USER_DATA_PYDANTIC_FROM_YAML = {
-    UserDataYAMLStrings.steam_path: "steam_path",
-    UserDataYAMLStrings.api_key: "api_key",
-    UserDataYAMLStrings.profile_id: "profile_id",
-    UserDataYAMLStrings.get_game_icons: "get_game_icons",
-    UserDataYAMLStrings.hashes_to_ignore: "hashes_to_ignore",
-    UserDataYAMLStrings.ignore_unkown: "ignore_unkown",
-    UserDataYAMLStrings.source: "source",
-    UserDataYAMLStrings.steam_games: "steam_games",
-    UserDataYAMLStrings.steam_games_name: "name",
-    UserDataYAMLStrings.steam_games_appid: "appid",
-    UserDataYAMLStrings.steam_games_exe_path: "exe_path",
-    UserDataYAMLStrings.custom_games: "custom_games",
-    UserDataYAMLStrings.custom_games_appid: "appid",
-    UserDataYAMLStrings.custom_games_exe_path: "exe_path",
-    UserDataYAMLStrings.custom_games_name: "name",
-}
+    get_game_icons = YAMLValue("Get Game Icons")
+    hashes_to_ignore = YAMLValue(yaml_key="Hashes to Ignore", default=("SteamMovie",))
+    ignore_unkown_hashes = YAMLValue(yaml_key="Ignore unkown Hashes", default=False)
+    source = YAMLValue(yaml_key="Source", default="auto")
 
 
 def generate_config_str():
-    default_values = DefaultConfigValues()
-    window_title = _to_yaml_value(default_values.window_title)
-    window_background = _to_yaml_value(default_values.window_background)
-    window_foreground = _to_yaml_value(default_values.window_foreground)
-    window_x_pos = _to_yaml_value(default_values.window_x_pos)
-    window_y_pos = _to_yaml_value(default_values.window_y_pos)
-    window_widht = _to_yaml_value(default_values.window_widht)
-    window_height = _to_yaml_value(default_values.window_height)
-    window_font_family = _to_yaml_value(default_values.window_font_family)
-    window_font_size = _to_yaml_value(default_values.window_font_size)
-    window_img_size = _to_yaml_value(default_values.window_img_size)
+    return f"""{ConfigValues.main_window.yaml_key}:
+  {ConfigValues.window_title.to_yaml_line()}
+  {ConfigValues.window_background.to_yaml_line(space_before_default=2)}
+  {ConfigValues.window_foreground.to_yaml_line(space_before_default=2)}
 
-    scrollbar_handle_color = _to_yaml_value(default_values.scollbar_handle_color)
-    scrollbar_backgound = _to_yaml_value(default_values.scollbar_background)
-    scrollbar_border_color = _to_yaml_value(default_values.scrollbar_border_color)
-
-    sort_by_appid = _to_yaml_value(default_values.sort_by_appid)
-    sort_by_custom = _to_yaml_value(default_values.sort_by_custom)
-
-    excluded_games = _to_yaml_value(default_values.excluded_games, indent=4)
-    show_only_games = _to_yaml_value(default_values.show_only_games, indent=4)
-    hide_steamworks_commmon = _to_yaml_value(default_values.hide_steamworks_commmon)
-
-    default_config = f"""{ConfigYAMLStrings.main_window}:
-  {ConfigYAMLStrings.window_title}: {window_title} #default: {window_title}
-  {ConfigYAMLStrings.window_background}: {window_background}  #default: {window_background}
-  {ConfigYAMLStrings.window_foreground}: {window_foreground}  #default: {window_foreground}
-
-  {ConfigYAMLStrings.window_pos}:
+  {ConfigValues.window_position.yaml_key}:
     # If both x and y position are set to "null", the window will be centered
-    {ConfigYAMLStrings.window_x_pos}: {window_x_pos} #default: {window_x_pos}
-    {ConfigYAMLStrings.window_y_pos}: {window_y_pos} #default: {window_y_pos}
+    {ConfigValues.window_x_pos.to_yaml_line()}
+    {ConfigValues.window_y_pos.to_yaml_line()}
 
-  {ConfigYAMLStrings.window_size}:
+  {ConfigValues.window_size.yaml_key}:
     # If both width and height are set to "null", the window automatically adjustes it's size
-    {ConfigYAMLStrings.window_width}:  {window_widht} #default: {window_widht}
-    {ConfigYAMLStrings.window_height}: {window_height} #default: {window_height}
+    {ConfigValues.window_width.to_yaml_line(space_after_colon=2)}
+    {ConfigValues.window_height.to_yaml_line()}
 
-  {ConfigYAMLStrings.window_font}:
-    {ConfigYAMLStrings.font_family}: {window_font_family} #default: {window_font_family}
-    {ConfigYAMLStrings.font_size}:   {window_font_size}      #default: {window_font_size}
+  {ConfigValues.window_font.yaml_key}:
+    {ConfigValues.font_family.to_yaml_line()}
+    {ConfigValues.font_size.to_yaml_line(space_after_colon=4, space_before_default=5)}
 
-  {ConfigYAMLStrings.img_size}: {window_img_size} #default: {window_img_size}
+  {ConfigValues.window_img_size.to_yaml_line()}
 
-{ConfigYAMLStrings.scrollbar}:
-  {ConfigYAMLStrings.scrollbar_color}:
-    {ConfigYAMLStrings.scrollbar_color_background}: {scrollbar_backgound}   #default: {scrollbar_backgound}
-    {ConfigYAMLStrings.scrollbar_color_handle}:     {scrollbar_handle_color}        #default: {scrollbar_handle_color}
-    {ConfigYAMLStrings.scrollbar_color_border}:     {scrollbar_border_color} #default: {scrollbar_border_color}, apparently needs "solid" in front of it
+{ConfigValues.scrollbar.yaml_key}:
+  # Turns off the vertical Scrollbar
+  {ConfigValues.scrollbar_off.to_yaml_line()}
+
+  # If False the standard Scrollbar will be used. Otherwise it uses the Scrollbar Config.
+  {ConfigValues.scrollbar_custom.to_yaml_line()}
+
+  {ConfigValues.scrollbar_color.yaml_key}:
+    {ConfigValues.scrollbar_color_background.to_yaml_line(space_before_default=3)}
+    {ConfigValues.scrollbar_color_handle.to_yaml_line(space_after_colon=5, space_before_default=8)}
+    {ConfigValues.scrollbar_color_border.to_yaml_line(space_after_colon=5)}, apparently needs "solid" in front of it
 
 
-{ConfigYAMLStrings.sort_by}:
+{ConfigValues.sort_by.yaml_key}:
   # To change the order of games, go to the games.txt file (will be created, upon first start) and change the order of games there
   # you are allowed to insert lines without characters
   # Additionally deleting one game from there, makes it dissapear (until next rescan (update button))
-  # If you want to exclude a game from showing up, {ConfigYAMLStrings.games_exlude} is recommended, because otherwise they will be readded
+  # If you want to exclude a game from showing up, {ConfigValues.games_exclude} is recommended, because otherwise they will be readded
   # ``SORT_BY_CUSTOM_ORDER`` takes priorisation over ``SORT_BY_APPID``
 
-  {ConfigYAMLStrings.sort_by_appid}:  {sort_by_appid} #default: {sort_by_appid}
-  {ConfigYAMLStrings.sort_by_custom}: {sort_by_custom}  #default: {sort_by_custom}
+  {ConfigValues.sort_by_appid.to_yaml_line(space_after_colon=8)}
+  {ConfigValues.sort_by_custom.to_yaml_line(space_before_default=2)}
 
-{ConfigYAMLStrings.games}:
+{ConfigValues.games.yaml_key}:
   # To add games, write their name after the minus (-)
   # Every Game needs a newline with a minus in front
-  {ConfigYAMLStrings.games_exlude}: {excluded_games}
+  {ConfigValues.games_exclude.to_yaml_line(with_default=False, indent=4)}
   # only_show overwrites exclude
-  {ConfigYAMLStrings.games_show_only}: {show_only_games}
+  {ConfigValues.games_show_only.to_yaml_line(with_default=False, indent=4)}
 
-  {ConfigYAMLStrings.games_hide_steamworks}: {hide_steamworks_commmon} #default: {hide_steamworks_commmon}
+  {ConfigValues.games_hide_steamworks.to_yaml_line()}
 """
-    return default_config
 
 
 def generate_user_data_str():
-    default_values = DefaultUserDataValues()
-    steam_path = _to_yaml_value(default_values.steam_path)
-    api_key = _to_yaml_value(default_values.api_key)
-    profile_id = _to_yaml_value(default_values.profile_id)
-    hashes_to_ignore = _to_yaml_value(default_values.hashes_to_ignore, indent=4)
-    ignore_unkown_hashes = _to_yaml_value(default_values.ignore_unkown_hashes)
-    source = _to_yaml_value(default_values.source)
-    custom_games = _to_yaml_value(default_values.custom_games, indent=2)
-    steam_games = _to_yaml_value(default_values.steam_games, indent=2)
-
     return rf"""# The path to the steam installation is necessary, in order to get your games
 
 # The Steam API Key and the Steam Profile ID are only needed, if you want to have the Icons of the Steam Games in the programm to reliably appear.
@@ -282,7 +230,7 @@ def generate_user_data_str():
 # the given path is the standard path, if installed for all users
 # The last character doesn't need to be a backslash \
 # Insert the path between the apostrophes
-{UserDataYAMLStrings.steam_path}: {steam_path} #default: {steam_path}
+{UserDataValues.steam_path.to_yaml_line()}
 
 
 # You can only create a API Key, if you have spent money on Steam (afaik 5€)
@@ -291,14 +239,14 @@ def generate_user_data_str():
 # ----------------------------------------------
 # | NEVER SHARE THIS FILE OR YOUR STEAMAPI KEY |
 # ----------------------------------------------
-{UserDataYAMLStrings.api_key}: {api_key}
+{UserDataValues.api_key.to_yaml_line(with_default=False)}
 
 
 # To get your profile ID, go into Steam -> Settings
 # The link in the upper left corner has the form of https://steamcommunity.com/profiles/<profile ID>/
 # If you click on that link, it will copy to clipboard, making it easier for you to enter your ID here
 # Again insert it between the apostrophes
-{UserDataYAMLStrings.profile_id}: {profile_id}
+{UserDataValues.profile_id.to_yaml_line(with_default=False)}
 
 # Add the relative Exe Path to a game, for which the Exe is not found automatically
 # either Name or AppID is required; If both are given, the Appid will override the Name
@@ -306,23 +254,23 @@ def generate_user_data_str():
 # Name: The name of the Game (e. g. "Doki Doki Literature Club")
 # AppID: The appid of the Game (e. g. 698780)
 # Exe Path: The relativ path from Steam/steamapps to the exe (e. g. "Doki Doki Literature Club\\DDLC.exe")
-{UserDataYAMLStrings.steam_games}: {steam_games}
+{UserDataValues.steam_games.to_yaml_line(with_default=False, indent=2)}
 
 # Set your custom games by adding one to the list
 # Fields:
 # Name: The name of your game (e. g. "Trackmania Nations Forever")
 # Exe Path: The Path to the games Exe (e. g. "C:\\Program Files (x86)\\TmNationsForever\\TmForever.exe")
 # AppID: Your custom AppID; Needs to be negative to not contradict Real Appids; Needed for the Image Identification (e. g. -1)
-{UserDataYAMLStrings.custom_games}: {custom_games}
+{UserDataValues.custom_games.to_yaml_line(with_default=False, indent=2)}
 
 
-{UserDataYAMLStrings.get_game_icons}:
+{UserDataValues.get_game_icons.yaml_key}:
   # When copying icons from Steam/steam/games, ignore these names.
   # This is useful if a hash cannot be automatically identified, but was manually added.
-  {UserDataYAMLStrings.hashes_to_ignore}: {hashes_to_ignore}
+  {UserDataValues.hashes_to_ignore.to_yaml_line(with_default=False, indent=4)}
 
   # If True, unknown hashes will not be copied when fetching icons offline.
-  {UserDataYAMLStrings.ignore_unkown}: {ignore_unkown_hashes} #default: {ignore_unkown_hashes}
+  {UserDataValues.ignore_unkown_hashes.to_yaml_line()}
 
   # declares how it fetches the icons:
   # auto:
@@ -331,5 +279,5 @@ def generate_user_data_str():
   #   Only fetch icons using the combination of Steam/steam/games and Steam/appcache/appinfo.vdf
   # online:
   #   Always use the Steam Web API
-  {UserDataYAMLStrings.source}: {source} # default {source}
+  {UserDataValues.source.to_yaml_line()}
 """  # noqa: S608
