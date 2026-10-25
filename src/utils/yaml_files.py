@@ -83,8 +83,11 @@ def create_config():
 
 
 def get_user_data() -> UserData:
+    # Create standard file, if not already existent
     create_user_data()
     logger.info("Loading user data.")
+
+    # Try to load the File
     try:
         with Path(USER_DATA_PATH).open(encoding="utf-8") as f:
             data = yaml.safe_load(f)
@@ -93,19 +96,23 @@ def get_user_data() -> UserData:
         logger.info("Using default values.")
         return UserData()
 
+    # Check if yaml file is empty
     if data is None:
         logger.warning("Empty userData file, please restore or delete it.")
         logger.info("Using default values.")
         return UserData()
 
+    # Check if steam_path exists
     steam_path = Path(data[UserDataValues.steam_path.yaml_key])
     if not steam_path.exists():
         logger.warning(f"Invalid Steam Path, now using {DefaultSteamPath_str}")
         steam_path = Path(DefaultSteamPath_str)
 
+    # TODO: Implement without error, so steam://rungameid still works
     if not steam_path.exists():
         raise FileNotFoundError("Path to Steam was not found.")
 
+    # try to parse the data
     try:
         user_data = UserData(**data)
     except ValidationError as e:
@@ -113,6 +120,7 @@ def get_user_data() -> UserData:
         logger.info("Using default values.")
         return UserData()
 
+    # If everything went as expected, return user Data
     return user_data
 
 

@@ -52,6 +52,7 @@ class SteamGameManager:
             game_by_appid[appid] = game
             game_by_name[game.name] = game
 
+        print(user_data.custom_games)
         # Get games from user data file
         if user_data.custom_games:
             for custom_game in user_data.custom_games:
@@ -64,6 +65,7 @@ class SteamGameManager:
                     install_dir="",
                     exe_path=custom_game.exe_path,
                 )
+                print(f"{custom_game = }")
 
                 game_by_appid[appid] = game
                 game_by_name[game_name] = game
@@ -275,7 +277,9 @@ def _download_image(url: str, name: str):
         with Path(IMG_DIR, img_file).open("wb") as fp:
             fp.write(response.content)
     else:
-        print(response.status_code)
+        logger.warning(
+            f"Got response code {response.status_code} while trying to download img {img_file}"
+        )
 
 
 def download_images(user_data: UserData):
@@ -297,8 +301,6 @@ def download_images(user_data: UserData):
         logger.info("No new games found, skipping request.")
         return
 
-    print(appids_to_download)
-
     game_icons = {}
 
     api_url = f"https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key={user_data.api_key}&steamid={user_data.profile_id}&format=json&include_played_free_games=1&include_appinfo=1&skip_unvetted_apps=false&include_free_sub"
@@ -315,7 +317,6 @@ def download_images(user_data: UserData):
 
     for game in response["games"]:
         game_icons[str(game["appid"])] = game["img_icon_url"]
-        print(game)
 
     for appid in appids_to_download:
         if (

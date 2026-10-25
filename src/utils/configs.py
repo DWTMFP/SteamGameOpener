@@ -100,10 +100,16 @@ class Config(MyBaseModel):
 
 
 class GetGameIcons(MyBaseModel):
-    hashes_to_ignore: list[str] = UserDataValues.hashes_to_ignore.pydantic_field()
-    ignore_unkown_hashes: bool = UserDataValues.ignore_unkown_hashes.pydantic_field()
-    source: Literal["auto", "online", "offline"] = (
-        UserDataValues.source.pydantic_field()
+    hashes_to_ignore: list[str] = Field(
+        default=UserDataValues.hashes_to_ignore.pydantic_field(),
+        alias="Hashes to Ignore",
+    )
+    ignore_unkown_hashes: bool = Field(
+        default=UserDataValues.ignore_unkown_hashes.pydantic_field(),
+        alias="Ignore unkown Hashes",
+    )
+    source: Literal["auto", "online", "offline"] = Field(
+        default=UserDataValues.source.pydantic_field(), alias="Source"
     )
 
     @field_validator("hashes_to_ignore", mode="before")
@@ -116,15 +122,25 @@ class GetGameIcons(MyBaseModel):
 
 
 class CustomGame(MyBaseModel):
-    name: str = UserDataValues.custom_games_name.pydantic_field()
-    appid: NegativeInt = UserDataValues.custom_games_appid.pydantic_field()
-    exe_path: str = UserDataValues.custom_games_exe_path.pydantic_field()
+    name: str = Field(
+        default=UserDataValues.custom_games_name.pydantic_field(), alias="Name"
+    )
+    appid: NegativeInt = Field(
+        default=UserDataValues.custom_games_appid.pydantic_field(), alias="AppID"
+    )
+    exe_path: str = Field(
+        default=UserDataValues.custom_games_exe_path.pydantic_field(), alias="Exe Path"
+    )
 
 
 class SteamGame(MyBaseModel):
-    name: str | None = UserDataValues.steam_games_name.pydantic_field()
-    appid: PositiveInt | None = UserDataValues.steam_games_appid.pydantic_field()
-    exe_path: str
+    name: str | None = Field(
+        default=UserDataValues.steam_games_name.pydantic_field(), alias="Name"
+    )
+    appid: PositiveInt | None = Field(
+        default=UserDataValues.steam_games_appid.pydantic_field(), alias="AppID"
+    )
+    exe_path: str | None = Field(default=None, alias="Exe Path")
 
     @model_validator(mode="after")
     def validate_name_or_appid(self):
