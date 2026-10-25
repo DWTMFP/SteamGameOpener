@@ -18,7 +18,7 @@ DefaultSteamPath_str = r"C:\Program Files (x86)\Steam"
 
 
 def _to_yaml_value(
-    value: bool | str | int | Iterable | None,  # noqa: FBT001
+    value: bool | str | int | Iterable | None,
     *,
     indent: int | None = None,
 ) -> str:
@@ -62,7 +62,7 @@ class YAMLValue:
         self,
         space_after_colon: int = 1,
         space_before_default: int = 1,
-        with_default: bool = True,  # noqa: FBT001, FBT002
+        with_default: bool = True,
         *,
         indent: int | None = None,
     ):
@@ -280,4 +280,4 @@ def generate_user_data_str():
   # online:
   #   Always use the Steam Web API
   {UserDataValues.source.to_yaml_line()}
-"""  # noqa: S608
+"""

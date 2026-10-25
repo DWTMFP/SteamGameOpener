@@ -35,7 +35,7 @@ def main():
 
     args = parser.parse_args()
 
-    config_path = Path(args.config)
+    config_path = Path(args.config).resolve()
     if not config_path.is_absolute():
         config_path = SRC_DIR / config_path
 

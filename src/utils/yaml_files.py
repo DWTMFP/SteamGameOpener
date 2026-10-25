@@ -9,6 +9,7 @@ from .constants import (
     STANDARD_CONFIG_PATH,
     USER_DATA_PATH,
     DefaultSteamPath_str,
+    UserDataValues,
     generate_config_str,
     generate_user_data_str,
 )
@@ -97,14 +98,14 @@ def get_user_data() -> UserData:
         logger.info("Using default values.")
         return UserData()
 
-    steam_path = Path(DefaultSteamPath_str)
+    steam_path = Path(data[UserDataValues.steam_path.yaml_key])
     if not steam_path.exists():
         logger.warning(f"Invalid Steam Path, now using {DefaultSteamPath_str}")
         steam_path = Path(DefaultSteamPath_str)
 
     if not steam_path.exists():
         raise FileNotFoundError("Path to Steam was not found.")
-    print(data)
+
     try:
         user_data = UserData(**data)
     except ValidationError as e:

@@ -212,6 +212,7 @@ class SteamGameManager:
 
     def __get_games_from_txt(self) -> list[str]:
         if not GAMES_PATH.exists():
+            self.__original_text_file = ""
             return []
         with Path(GAMES_PATH).open(encoding="utf8") as f:
             text = f.read()
