@@ -36,6 +36,7 @@ from utils import (
     get_QScrollBar_style_sheet,
     get_user_data,
     run_exe,
+    run_start_cmd,
 )
 from utils import Font as Config_Font
 from utils import MainWindow as Config_MainWindow
@@ -52,6 +53,7 @@ class ChooseExe(QWidget):
         item: QListWidgetItem,
         icon_size: QSize,
         exes: Iterable[Path],
+        linux_exe_command: str,
     ):
         super().__init__()
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -99,16 +101,18 @@ class ChooseExe(QWidget):
         main_layout.addLayout(selection_layout)
         self.setLayout(main_layout)
 
+        self.linux_exe_command = linux_exe_command
+
     def on_run_exe(self):
         current_item = self.exe_selection.currentItem()
         if current_item is None:
             return
         exe_path = current_item.text()
-        run_exe(Path(exe_path))
+        run_exe(Path(exe_path), self.linux_exe_command)
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, config: Config, user_data: UserData):  # noqa: PLR0915
+    def __init__(self, config: Config, user_data: UserData):
         super().__init__()
 
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
@@ -279,8 +283,11 @@ class MainWindow(QMainWindow):
 
     def run_game_via_exe(self, game: Game):
         game = self.steam_data.get_game(game_name=game.name)
+        if game.run_cmd is not None:
+            run_start_cmd(game.run_cmd)
         steam_path = Path(self.user_data.steam_path)
         steamapps_common_path = steam_path / "steamapps" / "common"
+        linux_exe_command = self.user_data.linux_exe_command
 
         if game.appid >= 0:
             install_dir = steamapps_common_path / game.install_dir
@@ -292,14 +299,14 @@ class MainWindow(QMainWindow):
             logger.info(f"Found Exe Path specified. Working with {game.exe_path}")
             exe_path = Path(game.exe_path)
             if exe_path.is_absolute() and exe_path.exists():
-                run_exe(exe_path)
+                run_exe(exe_path, linux_exe_command)
             else:
                 new_exe_path = steamapps_common_path / exe_path
                 logger.info(
                     f'"{str(exe_path)}" was not found, now trying "{str(new_exe_path)}"'
                 )
                 if new_exe_path.exists():
-                    run_exe(new_exe_path)
+                    run_exe(new_exe_path, linux_exe_command)
                 logger.info(
                     "Also not found. Some Configuration was not setup correctly, defaulting to normal search."
                 )
@@ -313,7 +320,7 @@ class MainWindow(QMainWindow):
         exe_to_try = install_dir / (game.name + ".exe")
         logger.info(f'Checking if "{exe_to_try}" exists')
         if exe_to_try in install_dir.glob("*.exe"):
-            run_exe(exe_to_try)
+            run_exe(exe_to_try, linux_exe_command)
 
         # Now install_dir is a valid directory, without game_name.exe, so check for other exe in that dir, with subdirs
         logger.info(
@@ -322,7 +329,7 @@ class MainWindow(QMainWindow):
         all_exes_iterator = set(install_dir.rglob("*.exe", case_sensitive=False))
         for exe in all_exes_iterator:
             if self.normalize_exe(exe.stem) == self.normalize_exe(game.name):
-                run_exe(exe)
+                run_exe(exe, linux_exe_command)
 
         # Didn't work either
         logger.info("Giving up to autodetect, now choose yourself.")
@@ -333,6 +340,7 @@ class MainWindow(QMainWindow):
             self.games_widget.currentItem(),
             self.games_widget.iconSize(),
             all_exes_iterator,
+            linux_exe_command,
         )
         self.exe_chooser.show()
 

@@ -15,6 +15,7 @@ from .general import (
     get_images,
     get_QScrollBar_style_sheet,
     run_exe,
+    run_start_cmd,
 )
 from .yaml_files import (
     Config,
@@ -44,4 +45,5 @@ __all__ = [
     "get_images",
     "get_user_data",
     "run_exe",
+    "run_start_cmd",
 ]

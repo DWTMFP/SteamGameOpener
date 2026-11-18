@@ -1,5 +1,7 @@
 import logging
 import os
+import platform
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -25,6 +27,7 @@ class Game:
     name: str
     install_dir: str
     exe_path: str | None = None
+    run_cmd: str | None = None
 
 
 class SteamGameManager:
@@ -35,7 +38,11 @@ class SteamGameManager:
         steam_games = user_data.steam_games
 
         # Get games from appmanifest files
-        for file in Path(user_data.steam_path, "steamapps").glob("appmanifest_*.acf"):
+        for file in (
+            Path(user_data.steam_path, "steamapps")
+            .expanduser()
+            .glob("appmanifest_*.acf")
+        ):
             # Get Appid
             try:
                 appid = int(file.stem.removeprefix("appmanifest_"))
@@ -52,7 +59,6 @@ class SteamGameManager:
             game_by_appid[appid] = game
             game_by_name[game.name] = game
 
-        print(user_data.custom_games)
         # Get games from user data file
         if user_data.custom_games:
             for custom_game in user_data.custom_games:
@@ -64,6 +70,7 @@ class SteamGameManager:
                     appid=appid,
                     install_dir="",
                     exe_path=custom_game.exe_path,
+                    run_cmd=custom_game.run_command,
                 )
                 print(f"{custom_game = }")
 
@@ -327,9 +334,26 @@ def download_images(user_data: UserData):
             logger.info(f"Downloaded image {str(appid) + '.jpg'}")
 
 
-def run_exe(path: Path):
+def run_start_cmd(cmd: str):
+    subprocess.Popen([cmd], shell=True)
+    sys.exit()
+
+
+def run_exe_windows(path: Path):
     logger.info(f"Running {str(path)}")
     os.startfile(path)
+
+
+def run_exe_linux(path: Path, linux_exe_command: str):
+    logger.info(f"Running: {linux_exe_command} {path}")
+    subprocess.Popen([linux_exe_command, path])
+
+
+def run_exe(path: Path, linux_exe_command: str):
+    if platform.system() == "Linux":
+        run_exe_linux(path, linux_exe_command)
+    else:
+        run_exe_windows(path)
     sys.exit()
 
 

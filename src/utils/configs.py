@@ -14,13 +14,13 @@ from pydantic import (
 from .constants import ConfigValues, UserDataValues
 
 logger = logging.getLogger()
-# == CONFIG ==
 
 
 class MyBaseModel(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+# == CONFIG ==
 class Position(MyBaseModel):
     x: int | None = ConfigValues.window_x_pos.pydantic_field()
     y: int | None = ConfigValues.window_y_pos.pydantic_field()
@@ -131,6 +131,10 @@ class CustomGame(MyBaseModel):
     exe_path: str = Field(
         default=UserDataValues.custom_games_exe_path.pydantic_field(), alias="Exe Path"
     )
+    run_command: str = Field(
+        default=UserDataValues.custom_games_run_cmd.pydantic_field(),
+        alias="Run Command",
+    )
 
 
 class SteamGame(MyBaseModel):
@@ -153,6 +157,8 @@ class UserData(MyBaseModel):
     steam_path: str = UserDataValues.steam_path.pydantic_field()
     api_key: str = UserDataValues.api_key.pydantic_field()
     profile_id: str = UserDataValues.profile_id.pydantic_field()
+
+    linux_exe_command: str = UserDataValues.linux_exe_command.pydantic_field()
 
     steam_games: list[SteamGame] | None = UserDataValues.steam_games.pydantic_field()
     custom_games: list[CustomGame] | None = UserDataValues.custom_games.pydantic_field()

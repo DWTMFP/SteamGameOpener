@@ -103,10 +103,10 @@ def get_user_data() -> UserData:
         return UserData()
 
     # Check if steam_path exists
-    steam_path = Path(data[UserDataValues.steam_path.yaml_key])
+    steam_path = Path(data[UserDataValues.steam_path.yaml_key]).expanduser()
     if not steam_path.exists():
         logger.warning(f"Invalid Steam Path, now using {DefaultSteamPath_str}")
-        steam_path = Path(DefaultSteamPath_str)
+        steam_path = Path(DefaultSteamPath_str).expanduser()
 
     # TODO: Implement without error, so steam://rungameid still works
     if not steam_path.exists():

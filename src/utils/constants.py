@@ -1,3 +1,4 @@
+import platform
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -14,7 +15,11 @@ USER_DATA_PATH = SRC_DIR / "userData.yaml"
 IMG_DIR = SRC_DIR / "Images"
 GAMES_PATH = SRC_DIR / "games.txt"
 
-DefaultSteamPath_str = r"C:\Program Files (x86)\Steam"
+DefaultSteamPath_str = (
+    r"C:\Program Files (x86)\Steam"
+    if platform.system() != "Linux"
+    else str(Path(Path.home() / "/.local/share/Steam/"))
+)
 
 
 def _to_yaml_value(
@@ -65,7 +70,20 @@ class YAMLValue:
         with_default: bool = True,
         *,
         indent: int | None = None,
-    ):
+    ) -> str:
+        """
+        Convert the element to a YAML line.
+
+            :param space_after_colon: Number of spaces after the colon.
+                Used for alignment with other elements. Defaults to 1.
+            :param space_before_default: Number of spaces before the
+                ``#default`` comments. Defaults to 1.
+            :param with_default: Whether to include the default value.
+                Defaults to True. Disable for lists.
+            :param indent: Number of indentation spaces. Defaults to None
+                (no indentation). Used for indenting lists.
+            :return: The formatted YAML line.
+        """
         value = self.yaml_default(indent=indent)
         separator_after_colon = " " * space_after_colon
         default_separator = " " * space_before_default
@@ -77,7 +95,7 @@ class YAMLValue:
 
         return line
 
-    def pydantic_field(self):
+    def pydantic_field(self) -> Field:
         if self.default_factory is not None:
             return Field(
                 default_factory=self.default_factory,
@@ -143,6 +161,8 @@ class UserDataValues:
     api_key = YAMLValue(yaml_key="Steam API Key", default="")
     profile_id = YAMLValue(yaml_key="Steam Profile ID", default="")
 
+    linux_exe_command = YAMLValue(yaml_key="Linux Exe Command", default="wine")
+
     steam_games = YAMLValue(yaml_key="Steam Games", default_factory=list)
     steam_games_name = YAMLValue("Name", default=None)
     steam_games_appid = YAMLValue("AppID", default=None)
@@ -152,6 +172,7 @@ class UserDataValues:
     custom_games_name = YAMLValue("Name")
     custom_games_exe_path = YAMLValue("Exe Path")
     custom_games_appid = YAMLValue("AppID")
+    custom_games_run_cmd = YAMLValue(yaml_key="Run Command")
 
     get_game_icons = YAMLValue("Get Game Icons")
     hashes_to_ignore = YAMLValue(yaml_key="Hashes to Ignore", default=("SteamMovie",))
@@ -248,6 +269,10 @@ def generate_user_data_str():
 # Again insert it between the apostrophes
 {UserDataValues.profile_id.to_yaml_line(with_default=False)}
 
+# Set to "" if on Windows
+# Requires wine to be installed (or whatever else you use)
+{UserDataValues.linux_exe_command.to_yaml_line()}
+
 # Add the relative Exe Path to a game, for which the Exe is not found automatically
 # either Name or AppID is required; If both are given, the Appid will override the Name
 # Fields:
@@ -260,6 +285,7 @@ def generate_user_data_str():
 # Fields:
 # Name: The name of your game (e. g. "Trackmania Nations Forever")
 # Exe Path: The Path to the games Exe (e. g. "C:\\Program Files (x86)\\TmNationsForever\\TmForever.exe")
+# Run Command: Can be provided instead of Exe Path, it runs the command to open the game (e.g. "/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=prismlauncher --file-forwarding org.prismlauncher.PrismLauncher @@u %U @@")
 # AppID: Your custom AppID; Needs to be negative to not contradict Real Appids; Needed for the Image Identification (e. g. -1)
 {UserDataValues.custom_games.to_yaml_line(with_default=False, indent=2)}
 
