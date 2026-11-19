@@ -101,12 +101,13 @@ class YAMLValue:
                 default_factory=self.default_factory,
                 alias=self.yaml_key,
             )
-        if self.default is not None:
-            return Field(
-                default=self.default,
-                alias=self.yaml_key,
-            )
-        return Field(alias=self.yaml_key)
+            # if self.default is not None:
+
+        return Field(
+            default=self.default,
+            alias=self.yaml_key,
+        )
+        # return Field(alias=self.yaml_key)
 
 
 class ConfigValues:

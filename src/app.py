@@ -456,7 +456,6 @@ def display_game_appid(config_path: Path):
 
 def display_gui(config_path: Path):
     config = get_config(config_path)
-    print(config)
     user_data = get_user_data()
 
     app = QApplication()
