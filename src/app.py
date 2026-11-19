@@ -4,6 +4,7 @@ import webbrowser
 from collections.abc import Iterable
 from pathlib import Path
 
+from pydantic.fields import FieldInfo
 from PySide6.QtCore import QSize, Qt
 from PySide6.QtGui import QFont, QPalette
 from PySide6.QtWidgets import (
@@ -176,7 +177,7 @@ class MainWindow(QMainWindow):
         self.games_widget.setSelectionMode(
             QAbstractItemView.SelectionMode.SingleSelection
         )
-        if not config.scrollbar.custom_scrollbar:
+        if config.scrollbar.custom_scrollbar:
             self.games_widget.setStyleSheet(
                 get_QScrollBar_style_sheet(config.scrollbar.color)
             )
@@ -283,7 +284,8 @@ class MainWindow(QMainWindow):
 
     def run_game_via_exe(self, game: Game):
         game = self.steam_data.get_game(game_name=game.name)
-        if game.run_cmd is not None:
+
+        if not isinstance(game.run_cmd, FieldInfo):
             run_start_cmd(game.run_cmd)
         steam_path = Path(self.user_data.steam_path)
         steamapps_common_path = steam_path / "steamapps" / "common"
@@ -454,6 +456,7 @@ def display_game_appid(config_path: Path):
 
 def display_gui(config_path: Path):
     config = get_config(config_path)
+    print(config)
     user_data = get_user_data()
 
     app = QApplication()

@@ -103,14 +103,19 @@ def get_user_data() -> UserData:
         return UserData()
 
     # Check if steam_path exists
-    steam_path = Path(data[UserDataValues.steam_path.yaml_key]).expanduser()
+    steam_path = Path(data[UserDataValues.steam_path.yaml_key]).expanduser().resolve()
     if not steam_path.exists():
         logger.warning(f"Invalid Steam Path, now using {DefaultSteamPath_str}")
-        steam_path = Path(DefaultSteamPath_str).expanduser()
+        steam_path = Path(DefaultSteamPath_str).expanduser().resolve()
 
     # TODO: Implement without error, so steam://rungameid still works
     if not steam_path.exists():
         raise FileNotFoundError("Path to Steam was not found.")
+
+    # DO NOT DELETE
+    # It will set the steam_path in the user_data dict, to the form with expanduser and resolve, so ~/ will be expanded to /home/user/
+    # It would require a lot of rework if done without this line
+    data[UserDataValues.steam_path.yaml_key] = str(steam_path)
 
     # try to parse the data
     try:

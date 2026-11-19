@@ -8,6 +8,7 @@ from pathlib import Path
 
 import requests
 from PIL import Image
+from pydantic.fields import FieldInfo
 from PySide6.QtGui import QIcon
 
 from steam_appinfo_parser.parse_appinfo import iter_apps
@@ -38,11 +39,7 @@ class SteamGameManager:
         steam_games = user_data.steam_games
 
         # Get games from appmanifest files
-        for file in (
-            Path(user_data.steam_path, "steamapps")
-            .expanduser()
-            .glob("appmanifest_*.acf")
-        ):
+        for file in Path(user_data.steam_path, "steamapps").glob("appmanifest_*.acf"):
             # Get Appid
             try:
                 appid = int(file.stem.removeprefix("appmanifest_"))
@@ -72,7 +69,6 @@ class SteamGameManager:
                     exe_path=custom_game.exe_path,
                     run_cmd=custom_game.run_command,
                 )
-                print(f"{custom_game = }")
 
                 game_by_appid[appid] = game
                 game_by_name[game_name] = game
@@ -92,7 +88,9 @@ class SteamGameManager:
             return
 
         for steam_game in steam_games:
-            if not (steam_game.appid and steam_game.name):
+            if isinstance(steam_game.appid, FieldInfo) or isinstance(
+                steam_game.name, FieldInfo
+            ):
                 continue
             # Check if A) AppID exists and B) if the gotten name and the actual name are matching
             try:
@@ -335,6 +333,7 @@ def download_images(user_data: UserData):
 
 
 def run_start_cmd(cmd: str):
+    logger.info(f"Running {cmd}")
     subprocess.Popen([cmd], shell=True)
     sys.exit()
 
@@ -445,14 +444,14 @@ def _copy_icon_to_image_folder(icon_hash: str, appid: int | None, steam_icon_dir
         logger.warning(f"Icon not found: {source_path}")
         return
 
-    destination_path = IMG_DIR / (new_name + ".jpeg")
+    destination_path = IMG_DIR / (new_name + ".png")
     # For also supporting .png files
     for img_format in (".jpg", ".png"):
         if destination_path.with_suffix(img_format).exists():
             return
 
     with Image.open(source_path) as image:
-        image.convert("RGB").save(destination_path, "JPEG")
+        image.convert("RGBA").save(destination_path, "PNG")
 
 
 def copy_icons(user_data: UserData):

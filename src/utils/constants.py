@@ -133,7 +133,7 @@ class ConfigValues:
     # Scrollbar
     scrollbar = YAMLValue("Scrollbar")
     scrollbar_off = YAMLValue(yaml_key="Deactivate Scrollbar", default=False)
-    scrollbar_custom = YAMLValue(yaml_key="Custom Scrollbar", default=False)
+    scrollbar_custom = YAMLValue(yaml_key="Custom Scrollbar", default=True)
 
     scrollbar_color = YAMLValue("Color")
     scrollbar_color_background = YAMLValue(yaml_key="Background", default="lightgrey")

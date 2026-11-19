@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from typing import Literal
 
 from pydantic import (
@@ -136,6 +137,13 @@ class CustomGame(MyBaseModel):
         alias="Run Command",
     )
 
+    @field_validator("exe_path", mode="after")
+    @classmethod
+    def resolve_exe_path(cls, value: str | None) -> str | None:
+        if value is not None:
+            return str(Path(value).expanduser().resolve())
+        return value
+
 
 class SteamGame(MyBaseModel):
     name: str | None = Field(
@@ -151,6 +159,13 @@ class SteamGame(MyBaseModel):
         if not self.name and not self.appid:
             raise ValueError('Either "name" or "appid" must be provided')
         return self
+
+    @field_validator("exe_path", mode="after")
+    @classmethod
+    def resolve_exe_path(cls, value: str | None) -> str | None:
+        if value is not None:
+            return str(Path(value).expanduser().resolve())
+        return value
 
 
 class UserData(MyBaseModel):
