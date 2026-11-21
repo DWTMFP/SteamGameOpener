@@ -218,6 +218,7 @@ class MainWindow(QMainWindow):
             self.resize(size)
         else:
             self.adjustSize()
+        print(self.games)
 
     def add_games(self):
         self.games_widget.clear()
@@ -284,8 +285,8 @@ class MainWindow(QMainWindow):
 
     def run_game_via_exe(self, game: Game):
         game = self.steam_data.get_game(game_name=game.name)
-
-        if not isinstance(game.run_cmd, FieldInfo):
+        print(game)
+        if game.run_cmd is not None and not isinstance(game.run_cmd, FieldInfo):
             run_start_cmd(game.run_cmd)
         steam_path = Path(self.user_data.steam_path)
         steamapps_common_path = steam_path / "steamapps" / "common"
@@ -308,7 +309,7 @@ class MainWindow(QMainWindow):
                     f'"{str(exe_path)}" was not found, now trying "{str(new_exe_path)}"'
                 )
                 if new_exe_path.exists():
-                    run_exe(new_exe_path, linux_exe_command)
+                    run_exe(new_exe_path, linux_exe_command, steam_path)
                 logger.info(
                     "Also not found. Some Configuration was not setup correctly, defaulting to normal search."
                 )
@@ -322,7 +323,7 @@ class MainWindow(QMainWindow):
         exe_to_try = install_dir / (game.name + ".exe")
         logger.info(f'Checking if "{exe_to_try}" exists')
         if exe_to_try in install_dir.glob("*.exe"):
-            run_exe(exe_to_try, linux_exe_command)
+            run_exe(exe_to_try, linux_exe_command, steam_path)
 
         # Now install_dir is a valid directory, without game_name.exe, so check for other exe in that dir, with subdirs
         logger.info(
@@ -331,7 +332,7 @@ class MainWindow(QMainWindow):
         all_exes_iterator = set(install_dir.rglob("*.exe", case_sensitive=False))
         for exe in all_exes_iterator:
             if self.normalize_exe(exe.stem) == self.normalize_exe(game.name):
-                run_exe(exe, linux_exe_command)
+                run_exe(exe, linux_exe_command, steam_path)
 
         # Didn't work either
         logger.info("Giving up to autodetect, now choose yourself.")

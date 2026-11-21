@@ -334,7 +334,7 @@ def download_images(user_data: UserData):
 
 def run_start_cmd(cmd: str):
     logger.info(f"Running {cmd}")
-    subprocess.Popen([cmd], shell=True)
+    subprocess.Popen(cmd, shell=True)
     sys.exit()
 
 
@@ -348,7 +348,9 @@ def run_exe_linux(path: Path, linux_exe_command: str):
     subprocess.Popen([linux_exe_command, path])
 
 
-def run_exe(path: Path, linux_exe_command: str):
+def run_exe(path: Path, linux_exe_command: str, steam_path: str | None = None):
+    if steam_path is not None and not path.is_absolute():
+        path = Path(steam_path) / path
     if platform.system() == "Linux":
         run_exe_linux(path, linux_exe_command)
     else:

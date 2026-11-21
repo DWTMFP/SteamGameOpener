@@ -160,13 +160,6 @@ class SteamGame(MyBaseModel):
             raise ValueError('Either "name" or "appid" must be provided')
         return self
 
-    @field_validator("exe_path", mode="after")
-    @classmethod
-    def resolve_exe_path(cls, value: str | None) -> str | None:
-        if value is not None:
-            return str(Path(value).expanduser().resolve())
-        return value
-
 
 class UserData(MyBaseModel):
     steam_path: str = UserDataValues.steam_path.pydantic_field()

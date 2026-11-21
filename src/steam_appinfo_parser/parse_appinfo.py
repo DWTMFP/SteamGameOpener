@@ -33,17 +33,16 @@ Output modes:
              2=Playable 3=Verified)
 """
 
+import argparse
 import csv
 import io
 import json
 import os
 import struct
 import sys
-import argparse
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
-
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -52,16 +51,16 @@ from typing import Any, Iterator
 MAGIC_V41 = b"\x29\x44\x56\x07"
 
 # VDF type bytes
-TYPE_DICT    = 0x00
-TYPE_STRING  = 0x01
-TYPE_INT32   = 0x02
+TYPE_DICT = 0x00
+TYPE_STRING = 0x01
+TYPE_INT32 = 0x02
 TYPE_FLOAT32 = 0x03
-TYPE_PTR     = 0x04
+TYPE_PTR = 0x04
 TYPE_WSTRING = 0x05
-TYPE_COLOR   = 0x06
-TYPE_UINT64  = 0x07
-TYPE_END     = 0x08
-TYPE_INT64   = 0x0A
+TYPE_COLOR = 0x06
+TYPE_UINT64 = 0x07
+TYPE_END = 0x08
+TYPE_INT64 = 0x0A
 
 # The fixed per-entry header that follows the `size` field:
 # info_state(4) + last_updated(4) + access_token(8) +
@@ -72,6 +71,7 @@ FIXED_HEADER_BYTES = 60
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _fmt_timestamp(ts, date_format: str):
     """Return ts as-is for 'unix', or as a YYYY-MM-DD string for 'iso'.
@@ -103,6 +103,7 @@ def _load_string_table(data: bytes, offset: int) -> list[str]:
 # Binary VDF parser
 # ---------------------------------------------------------------------------
 
+
 def _read_bvdf(data: bytes, pos: int, end: int, st: list[str]) -> tuple[dict, int]:
     """Recursively parse a v41 binary VDF blob.
 
@@ -111,13 +112,15 @@ def _read_bvdf(data: bytes, pos: int, end: int, st: list[str]) -> tuple[dict, in
     """
     result: dict[str, Any] = {}
     while pos < end:
-        type_byte = data[pos]; pos += 1
+        type_byte = data[pos]
+        pos += 1
         if type_byte == TYPE_END:
             break
         if pos + 4 > end:
             break
 
-        key_idx = struct.unpack_from("<I", data, pos)[0]; pos += 4
+        key_idx = struct.unpack_from("<I", data, pos)[0]
+        pos += 4
         key = st[key_idx] if key_idx < len(st) else f"?{key_idx}"
 
         if type_byte == TYPE_DICT:
@@ -129,15 +132,20 @@ def _read_bvdf(data: bytes, pos: int, end: int, st: list[str]) -> tuple[dict, in
             val = data[pos:nul].decode("utf-8", errors="replace")
             pos = nul + 1
         elif type_byte == TYPE_INT32:
-            val = struct.unpack_from("<i", data, pos)[0]; pos += 4
+            val = struct.unpack_from("<i", data, pos)[0]
+            pos += 4
         elif type_byte == TYPE_FLOAT32:
-            val = struct.unpack_from("<f", data, pos)[0]; pos += 4
+            val = struct.unpack_from("<f", data, pos)[0]
+            pos += 4
         elif type_byte in (TYPE_PTR, TYPE_COLOR):
-            val = struct.unpack_from("<I", data, pos)[0]; pos += 4
+            val = struct.unpack_from("<I", data, pos)[0]
+            pos += 4
         elif type_byte == TYPE_UINT64:
-            val = struct.unpack_from("<Q", data, pos)[0]; pos += 8
+            val = struct.unpack_from("<Q", data, pos)[0]
+            pos += 8
         elif type_byte == TYPE_INT64:
-            val = struct.unpack_from("<q", data, pos)[0]; pos += 8
+            val = struct.unpack_from("<q", data, pos)[0]
+            pos += 8
         elif type_byte == TYPE_WSTRING:
             nul = data.find(b"\x00\x00", pos)
             if nul == -1:
@@ -155,6 +163,7 @@ def _read_bvdf(data: bytes, pos: int, end: int, st: list[str]) -> tuple[dict, in
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+
 
 def iter_apps(data: bytes) -> Iterator[dict]:
     """Yield one dict per app entry in the raw appinfo.vdf bytes.
@@ -177,20 +186,26 @@ def iter_apps(data: bytes) -> Iterator[dict]:
 
     pos = 16  # first app entry starts right after the 16-byte file header
     while pos < data_end - 4:
-        appid = struct.unpack_from("<I", data, pos)[0]; pos += 4
+        appid = struct.unpack_from("<I", data, pos)[0]
+        pos += 4
         if appid == 0:
             break  # sentinel that marks end of entries
 
-        size          = struct.unpack_from("<I", data, pos)[0]; pos += 4
-        _             = struct.unpack_from("<I", data, pos)[0]; pos += 4  # info_state
-        last_updated  = struct.unpack_from("<I", data, pos)[0]; pos += 4
-        _             = struct.unpack_from("<Q", data, pos)[0]; pos += 8  # access_token
-        pos          += 20                                                 # sha1_cdn
-        change_number = struct.unpack_from("<I", data, pos)[0]; pos += 4
-        pos          += 20                                                 # sha1_data
+        size = struct.unpack_from("<I", data, pos)[0]
+        pos += 4
+        _ = struct.unpack_from("<I", data, pos)[0]
+        pos += 4  # info_state
+        last_updated = struct.unpack_from("<I", data, pos)[0]
+        pos += 4
+        _ = struct.unpack_from("<Q", data, pos)[0]
+        pos += 8  # access_token
+        pos += 20  # sha1_cdn
+        change_number = struct.unpack_from("<I", data, pos)[0]
+        pos += 4
+        pos += 20  # sha1_data
 
         vdf_size = size - FIXED_HEADER_BYTES
-        vdf_end  = pos + vdf_size
+        vdf_end = pos + vdf_size
         if vdf_size <= 0 or vdf_end > data_end:
             pos = vdf_end
             continue
@@ -201,19 +216,19 @@ def iter_apps(data: bytes) -> Iterator[dict]:
             pos = vdf_end
             continue
 
-        appinfo  = raw.get("appinfo", {})
-        common   = appinfo.get("common",   {})
+        appinfo = raw.get("appinfo", {})
+        common = appinfo.get("common", {})
         extended = appinfo.get("extended", {})
 
         yield {
-            "appid":         appid,
-            "name":          common.get("name", ""),
-            "type":          str(common.get("type", "")).lower(),
+            "appid": appid,
+            "name": common.get("name", ""),
+            "type": str(common.get("type", "")).lower(),
             "change_number": change_number,
-            "last_updated":  last_updated,
-            "common":        common,
-            "extended":      extended,
-            "raw":           raw,
+            "last_updated": last_updated,
+            "common": common,
+            "extended": extended,
+            "raw": raw,
         }
         pos = vdf_end
 
@@ -223,15 +238,31 @@ def iter_apps(data: bytes) -> Iterator[dict]:
 # ---------------------------------------------------------------------------
 
 CSV_FIELDS_FULL = [
-    "appid", "name", "type", "change_number", "last_updated",
-    "oslist", "osarch", "genres", "metacritic_score",
-    "store_tags", "categories", "review_score", "review_percentage",
+    "appid",
+    "name",
+    "type",
+    "change_number",
+    "last_updated",
+    "oslist",
+    "osarch",
+    "genres",
+    "metacritic_score",
+    "store_tags",
+    "categories",
+    "review_score",
+    "review_percentage",
 ]
 
 CSV_FIELDS_GAME = [
-    "appid", "name", "developer", "publisher",
-    "oslist", "release_date",
-    "metacritic_score", "review_score", "review_percentage",
+    "appid",
+    "name",
+    "developer",
+    "publisher",
+    "oslist",
+    "release_date",
+    "metacritic_score",
+    "review_score",
+    "review_percentage",
     "deck_compat",
 ]
 
@@ -242,23 +273,25 @@ def _to_game_record(app: dict, date_format: str) -> dict:
     developer/publisher come from extended; everything else from common.
     deck_compat is the integer category inside the steam_deck_compatibility dict.
     """
-    common   = app.get("common",   {})
+    common = app.get("common", {})
     extended = app.get("extended", {})
 
-    deck_info   = common.get("steam_deck_compatibility", {})
+    deck_info = common.get("steam_deck_compatibility", {})
     deck_compat = deck_info.get("category", 0) if isinstance(deck_info, dict) else 0
 
     return {
-        "appid":             app["appid"],
-        "name":              app["name"],
-        "developer":         extended.get("developer", ""),
-        "publisher":         extended.get("publisher", ""),
-        "oslist":            common.get("oslist", ""),
-        "release_date":      _fmt_timestamp(common.get("steam_release_date", ""), date_format),
-        "metacritic_score":  common.get("metacritic_score", ""),
-        "review_score":      common.get("review_score", ""),
+        "appid": app["appid"],
+        "name": app["name"],
+        "developer": extended.get("developer", ""),
+        "publisher": extended.get("publisher", ""),
+        "oslist": common.get("oslist", ""),
+        "release_date": _fmt_timestamp(
+            common.get("steam_release_date", ""), date_format
+        ),
+        "metacritic_score": common.get("metacritic_score", ""),
+        "review_score": common.get("review_score", ""),
         "review_percentage": common.get("review_percentage", ""),
-        "deck_compat":       deck_compat,
+        "deck_compat": deck_compat,
     }
 
 
@@ -266,23 +299,25 @@ def _to_flat_full(app: dict, date_format: str) -> dict:
     """Flatten a full app dict to a single-level dict for CSV output."""
     common = app.get("common", {})
     return {
-        "appid":             app["appid"],
-        "name":              app["name"],
-        "type":              app["type"],
-        "change_number":     app["change_number"],
-        "last_updated":      _fmt_timestamp(app["last_updated"], date_format),
-        "oslist":            common.get("oslist", ""),
-        "osarch":            common.get("osarch", ""),
-        "genres":            json.dumps(common.get("genres", {})),
-        "metacritic_score":  common.get("metacritic_score", ""),
-        "store_tags":        json.dumps(common.get("store_tags", {})),
-        "categories":        json.dumps(common.get("category", {})),
-        "review_score":      common.get("review_score", ""),
+        "appid": app["appid"],
+        "name": app["name"],
+        "type": app["type"],
+        "change_number": app["change_number"],
+        "last_updated": _fmt_timestamp(app["last_updated"], date_format),
+        "oslist": common.get("oslist", ""),
+        "osarch": common.get("osarch", ""),
+        "genres": json.dumps(common.get("genres", {})),
+        "metacritic_score": common.get("metacritic_score", ""),
+        "store_tags": json.dumps(common.get("store_tags", {})),
+        "categories": json.dumps(common.get("category", {})),
+        "review_score": common.get("review_score", ""),
         "review_percentage": common.get("review_percentage", ""),
     }
 
 
-def write_output(apps: list[dict], fmt: str, pretty: bool, out, game_mode: bool, date_format: str):
+def write_output(
+    apps: list[dict], fmt: str, pretty: bool, out, game_mode: bool, date_format: str
+):
     if fmt == "json":
         json.dump(apps, out, ensure_ascii=False, indent=2 if pretty else None)
         out.write("\n")
@@ -295,8 +330,10 @@ def write_output(apps: list[dict], fmt: str, pretty: bool, out, game_mode: bool,
             fields, rows = CSV_FIELDS_GAME, apps
         else:
             fields = CSV_FIELDS_FULL
-            rows   = [_to_flat_full(a, date_format) for a in apps]
-        writer = csv.DictWriter(out, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
+            rows = [_to_flat_full(a, date_format) for a in apps]
+        writer = csv.DictWriter(
+            out, fieldnames=fields, extrasaction="ignore", lineterminator="\n"
+        )
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
@@ -306,12 +343,20 @@ def write_output(apps: list[dict], fmt: str, pretty: bool, out, game_mode: bool,
 # CLI
 # ---------------------------------------------------------------------------
 
+
 def default_appinfo_path() -> Path:
     if sys.platform == "win32":
         base = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
         return Path(base) / "Steam" / "appcache" / "appinfo.vdf"
     if sys.platform == "darwin":
-        return Path.home() / "Library" / "Application Support" / "Steam" / "appcache" / "appinfo.vdf"
+        return (
+            Path.home()
+            / "Library"
+            / "Application Support"
+            / "Steam"
+            / "appcache"
+            / "appinfo.vdf"
+        )
     return Path.home() / ".steam" / "steam" / "appcache" / "appinfo.vdf"
 
 
@@ -321,22 +366,44 @@ def build_parser() -> argparse.ArgumentParser:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
-    p.add_argument("vdf_path", nargs="?", metavar="appinfo.vdf",
-                   help="path to appinfo.vdf (default: auto-detect)")
-    p.add_argument("--format", "-f", choices=["json", "jsonl", "csv"], default="json",
-                   help="output format (default: json)")
-    p.add_argument("--output", "-o", metavar="PATH",
-                   help="write to file instead of stdout")
-    p.add_argument("--type", "-t", action="append", dest="types", metavar="TYPE",
-                   help="filter by app type, e.g. --type game (repeatable; "
-                        "--type game alone enables slim game output)")
-    p.add_argument("--date-format", "-d", choices=["unix", "iso"], default="unix",
-                   dest="date_format",
-                   help="timestamp format: unix integer (default) or YYYY-MM-DD")
+    p.add_argument(
+        "vdf_path",
+        nargs="?",
+        metavar="appinfo.vdf",
+        help="path to appinfo.vdf (default: auto-detect)",
+    )
+    p.add_argument(
+        "--format",
+        "-f",
+        choices=["json", "jsonl", "csv"],
+        default="json",
+        help="output format (default: json)",
+    )
+    p.add_argument(
+        "--output", "-o", metavar="PATH", help="write to file instead of stdout"
+    )
+    p.add_argument(
+        "--type",
+        "-t",
+        action="append",
+        dest="types",
+        metavar="TYPE",
+        help="filter by app type, e.g. --type game (repeatable; "
+        "--type game alone enables slim game output)",
+    )
+    p.add_argument(
+        "--date-format",
+        "-d",
+        choices=["unix", "iso"],
+        default="unix",
+        dest="date_format",
+        help="timestamp format: unix integer (default) or YYYY-MM-DD",
+    )
     p.add_argument("--pretty", action="store_true", help="indent JSON output")
     p.add_argument("--no-empty", action="store_true", help="skip entries with no name")
-    p.add_argument("--no-raw", action="store_true",
-                   help="omit the raw field from full output")
+    p.add_argument(
+        "--no-raw", action="store_true", help="omit the raw field from full output"
+    )
     return p
 
 
@@ -352,7 +419,7 @@ def main():
     data = vdf_path.read_bytes()
 
     allowed_types = {t.lower() for t in args.types} if args.types else None
-    game_mode     = (allowed_types == {"game"})
+    game_mode = allowed_types == {"game"}
 
     apps = []
     for app in iter_apps(data):

@@ -9,3 +9,4 @@ src/Images/*
 
 src/*.yaml
 src/test.py
+t.json
